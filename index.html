@@ -13,7 +13,6 @@ function pay() {
     Pi.createPayment(paymentData, {
         onReadyForServerApproval: (paymentId) => {
             console.log("Approve:", paymentId);
-            // هذا السطر الجديد اللي يحل المشكلة
             Pi.approvePaymentServerSide(paymentId);
             document.getElementById('status').innerText = 'Payment approved: ' + paymentId;
         },
