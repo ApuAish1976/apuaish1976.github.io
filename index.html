@@ -1,30 +1,71 @@
-function pay() {
-    document.getElementById('status').innerText = 'Processing...';
-    
-    const paymentData = {
-        amount: 0.1,
-        memo: "Cortex Goal Test Transaction",
-        metadata: { 
-            app: "Cortex",
-            to_address: "0x853967d78d27c538714c01b5fd3b1cf06502d827" 
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Cortex Payment Test</title>
+    <script src="https://sdk.minepi.com/pi-sdk.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body { 
+            background: #000; 
+            color: #fff; 
+            font-family: Arial; 
+            text-align: center; 
+            padding: 50px 20px; 
         }
-    };
-    
-    Pi.createPayment(paymentData, {
-        onReadyForServerApproval: (paymentId) => {
-            console.log("Approve:", paymentId);
-            Pi.approvePaymentServerSide(paymentId);
-            document.getElementById('status').innerText = 'Payment approved: ' + paymentId;
-        },
-        onReadyForServerCompletion: (paymentId, txid) => {
-            console.log("Complete:", txid);
-            document.getElementById('status').innerText = 'Success! TX: ' + txid;
-        },
-        onCancel: (paymentId) => {
-            document.getElementById('status').innerText = 'Payment cancelled';
-        },
-        onError: (error, payment) => {
-            document.getElementById('status').innerText = 'Error: ' + error;
-        },
-    });
-}
+        button { 
+            background: #8A2BE2; 
+            color: white; 
+            border: none; 
+            padding: 15px 30px; 
+            font-size: 18px; 
+            border-radius: 8px; 
+            cursor: pointer; 
+        }
+        #status { 
+            margin-top: 20px; 
+            font-size: 16px; 
+        }
+    </style>
+</head>
+<body>
+    <h1>Cortex Escrow dApp</h1>
+    <p>Step 10: Test Payment</p>
+    <button onclick="pay()">Test Payment 0.1 Test-Pi</button>
+    <p id="status"></p>
+
+    <script>
+        Pi.init({ version: "2.0", sandbox: true });
+        
+        function pay() {
+            document.getElementById('status').innerText = 'Processing...';
+            
+            const paymentData = {
+                amount: 0.1,
+                memo: "Cortex Goal Test Transaction",
+                metadata: { 
+                    app: "Cortex",
+                    to_address: "0x853967d78d27c538714c01b5fd3b1cf06502d827" 
+                }
+            };
+            
+            Pi.createPayment(paymentData, {
+                onReadyForServerApproval: (paymentId) => {
+                    console.log("Approve:", paymentId);
+                    Pi.approvePaymentServerSide(paymentId);
+                    document.getElementById('status').innerText = 'Payment approved: ' + paymentId;
+                },
+                onReadyForServerCompletion: (paymentId, txid) => {
+                    console.log("Complete:", txid);
+                    document.getElementById('status').innerText = 'Success! TX: ' + txid;
+                },
+                onCancel: (paymentId) => {
+                    document.getElementById('status').innerText = 'Payment cancelled';
+                },
+                onError: (error, payment) => {
+                    document.getElementById('status').innerText = 'Error: ' + error;
+                },
+            });
+        }
+    </script>
+</body>
+</html>
