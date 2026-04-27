@@ -1,54 +1,64 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Cortex Payment Test</title>
-<script src="https://sdk.minepi.com/pi-sdk.js"></script>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<style>
-body{background:#000;color:#fff;font-family:Arial;text-align:center;padding:50px 20px}
-button{background:#8A2BE2;color:#fff;border:none;padding:15px 30px;font-size:18px;border-radius:8px;cursor:pointer;margin:10px;width:280px}
-#status{margin-top:20px;font-size:16px;color:#0f0}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cortex Test</title>
+    <script src="https://sdk.minepi.com/pi-sdk.js"></script>
+    <style>
+        body { font-family: Arial; text-align: center; padding: 50px; background: #1a1a2e; color: white; }
+        button { padding: 15px 30px; font-size: 18px; margin: 10px; border: none; border-radius: 8px; cursor: pointer; }
+        .login { background: #6c5ce7; color: white; }
+        .pay { background: #00b894; color: white; }
+        #log { margin-top: 30px; padding: 20px; background: #0f3460; border-radius: 8px; text-align: left; }
+    </style>
 </head>
 <body>
-<h1>Cortex Escrow dApp</h1>
-<p>Step 10: Test Payment</p>
-<button id="login">1. Login with Pi</button><br>
-<button id="pay">2. Test Payment 0.1 Test-Pi</button>
-<p id="status">Please login first</p>
-<script>
-Pi.init({version:"2.0",sandbox:true});
-let user=null;
-document.getElementById("login").onclick=()=>{
-document.getElementById("status").innerText="Opening login...";
-Pi.authenticate(["payments"],onIncompletePaymentFound).then(function(auth){
-user=auth.user;
-document.getElementById("status").innerText="Logged in as: "+auth.user.username
-}).catch(function(error){
-document.getElementById("status").innerText="Login Error: "+error
-})};
-function onIncompletePaymentFound(payment){
-console.log("Incomplete payment found:",payment)
-}
-document.getElementById("pay").onclick=()=>{
-if(!user){document.getElementById("status").innerText="Please login first";return}
-document.getElementById("status").innerText="Processing...";
-const paymentData={amount:0.1,memo:"Cortex Goal Test Transaction",metadata:{app:"Cortex"}};
-Pi.createPayment(paymentData,{
-onReadyForServerApproval:function(paymentId){
-console.log("Payment ID:",paymentId);
-document.getElementById("status").innerText="Waiting for blockchain..."
-},
-onReadyForServerCompletion:function(paymentId,txid){
-document.getElementById("status").innerText="Success! TX: "+txid
-},
-onCancel:function(paymentId){
-document.getElementById("status").innerText="Payment cancelled"
-},
-onError:function(error,payment){
-document.getElementById("status").innerText="Error: "+error
-}
-})};
-</script>
+    <h1>Cortex Sandbox Test</h1>
+    <button class="login" onclick="login()">1. Login</button>
+    <button class="pay" onclick="pay()">2. Pay 0.1 Test</button>
+    <div id="log">جاهز للاختبار...</div>
+
+    <script>
+        // أهم سطر: لازم sandbox:true
+        Pi.init({ version: "2.0", sandbox: true });
+        
+        const log = (msg) => {
+            document.getElementById('log').innerHTML += '<br>' + msg;
+            console.log(msg);
+        }
+
+        function login() {
+            log('جاري تسجيل الدخول...');
+            Pi.authenticate(['payments'], (auth) => {
+                log('✅ Logged in: ' + auth.user.username);
+            }, (error) => {
+                log('❌ Login Error: ' + error);
+            });
+        }
+
+        function pay() {
+            log('جاري إنشاء الدفع...');
+            Pi.createPayment({
+                amount: 0.1,
+                memo: "Cortex Test Payment",
+                metadata: { test: true }
+            }, {
+                // أهم 3 دوال: لازم تكون فاضية كذا للـ Sandbox
+                onReadyForServerApproval: function(paymentId) {
+                    log('✅ onReadyForServerApproval: ' + paymentId);
+                },
+                onReadyForServerCompletion: function(paymentId, txid) {
+                    log('✅ onReadyForServerCompletion: ' + txid);
+                },
+                onCancel: function(paymentId) {
+                    log('❌ تم الإلغاء: ' + paymentId);
+                },
+                onError: function(error, payment) {
+                    log('❌ خطأ: ' + error);
+                }
+            });
+        }
+    </script>
 </body>
 </html>
