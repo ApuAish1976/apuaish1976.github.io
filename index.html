@@ -1,1 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cortex Test</title>
+    <script src="https://sdk.minepi.com/pi-sdk.js"></script>
+    <style>
+        body { font-family: Arial; text-align: center; padding: 50px; background: #1a1a2e; color: white; }
+        button { padding: 15px 30px; font-size: 18px; margin: 10px; border: none; border-radius: 8px; cursor: pointer; }
+        .login { background: #6c5ce7; color: white; }
+        .pay { background: #00b894; color: white; }
+        #log { margin-top: 30px; padding: 20px; background: #0f3460; border-radius: 8px; text-align: left; }
+    </style>
+</head>
+<body>
+    <h1>Cortex Sandbox Test</h1>
+    <button class="login" onclick="login()">1. Login</button>
+    <button class="pay" onclick="pay()">2. Pay 0.1 Test</button>
+    <div id="log">Ready to test...</div>
 
+    <script>
+        Pi.init({ version: "2.0", sandbox: true });
+        
+        const log = (msg) => {
+            document.getElementById('log').innerHTML += '<br>' + msg;
+            console.log(msg);
+        }
+
+        function login() {
+            log('Authenticating...');
+            Pi.authenticate(['payments'], (auth) => {
+                log('✅ Logged in: ' + auth.user.username);
+            }, (error) => {
+                log('❌ Login Error: ' + error);
+            });
+        }
+
+        function pay() {
+            log('Creating payment...');
+            Pi.createPayment({
+                amount: 0.1,
+                memo: "Cortex Test Payment",
+                metadata: { test: true }
+            }, {
+                onReadyForServerApproval: function(paymentId) {
+                    log('✅ onReadyForServerApproval: ' + paymentId);
+                    Pi.approve(paymentId);
+                },
+                onReadyForServerCompletion: function(paymentId, txid) {
+                    log('✅ onReadyForServerCompletion: ' + txid);
+                    Pi.complete(paymentId);
+                },
+                onCancel: function(paymentId) {
+                    log('❌ Cancelled: ' + paymentId);
+                },
+                onError: function(error, payment) {
+                    log('❌ Error: ' + error);
+                }
+            });
+        }
+    </script>
+</body>
+</html>
