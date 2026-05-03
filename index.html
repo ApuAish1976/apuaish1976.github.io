@@ -13,14 +13,11 @@
   <div id="log" style="background:#1e293b;padding:20px;border-radius:8px;margin-top:20px;text-align:left">Ready to test...</div>
 
   <script>
-    // 1. لازم نعرف الدالة هذي أول شي قبل أي شي
     function onIncompletePaymentFound(payment) {
       addLog('Found incomplete payment: ' + payment.identifier);
-      // للـ Sandbox نوافق عليها مباشرة
       Pi.completePayment(payment.identifier);
     }
 
-    // 2. نشغل الـ SDK
     Pi.init({ version: "2.0", sandbox: true });
     addLog('SDK Initialized. Sandbox: true');
 
@@ -33,12 +30,10 @@
       try {
         addLog('Button clicked. Starting auth...');
         const scopes = ['payments'];
-        // لازم نمرر الدالة هنا
         const auth = await Pi.authenticate(scopes, onIncompletePaymentFound);
         addLog('Login SUCCESS: ' + auth.user.username);
       } catch (error) {
         addLog('Login FAILED: ' + error.message);
-        alert('فشل تسجيل الدخول: ' + error.message);
       }
     }
 
@@ -47,7 +42,7 @@
       Pi.createPayment({
         amount: 0.1,
         memo: "Test Payment",
-        metadata: {}
+        metadata: { test: "1", orderId: Date.now() } // ← هذا التعديل المهم
       }, {
         onReadyForServerApproval: function(paymentId) {
           addLog('Payment needs approval: ' + paymentId);
