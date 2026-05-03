@@ -1,64 +1,71 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cortex Test</title>
-    <script src="https://sdk.minepi.com/pi-sdk.js"></script>
-    <style>
-        body { font-family: Arial; text-align: center; padding: 50px; background: #1a1a2e; color: white; }
-        button { padding: 15px 30px; font-size: 18px; margin: 10px; border: none; border-radius: 8px; cursor: pointer; }
-        .login { background: #6c5ce7; color: white; }
-        .pay { background: #00b894; color: white; }
-        #log { margin-top: 30px; padding: 20px; background: #0f3460; border-radius: 8px; text-align: left; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cortex Test</title>
+  <script src="https://sdk.minepi.com/pi-sdk.js"></script>
 </head>
-<body>
-    <h1>Cortex Sandbox Test</h1>
-    <button class="login" onclick="login()">1. Login</button>
-    <button class="pay" onclick="pay()">2. Pay 0.1 Test</button>
-    <div id="log">Ready to test...</div>
+<body style="background:#0f172a;color:white;text-align:center;padding:50px;font-family:sans-serif">
+  <h1>Cortex Sandbox Test</h1>
+  <button onclick="login()" style="padding:15px 30px;font-size:18px;background:#6366f1;border:none;border-radius:8px;color:white;margin:10px">1. Login</button>
+  <button onclick="pay()" style="padding:15px 30px;font-size:18px;background:#10b981;border:none;border-radius:8px;color:white;margin:10px">2. Pay 0.1 Test</button>
+  <div id="log" style="background:#1e293b;padding:20px;border-radius:8px;margin-top:20px;text-align:left">Ready to test...</div>
 
-    <script>
-        Pi.init({ version: "2.0", sandbox: true });
-        
-        const log = (msg) => {
-            document.getElementById('log').innerHTML += '<br>' + msg;
-            console.log(msg);
-        }
+  <script>
+    // 1. لازم نعرف الدالة هذي أول شي قبل أي شي
+    function onIncompletePaymentFound(payment) {
+      addLog('Found incomplete payment: ' + payment.identifier);
+      // للـ Sandbox نوافق عليها مباشرة
+      Pi.completePayment(payment.identifier);
+    }
 
-        function login() {
-            log('Authenticating...');
-            Pi.authenticate(['payments'], (auth) => {
-                log('✅ Logged in: ' + auth.user.username);
-            }, (error) => {
-                log('❌ Login Error: ' + error);
-            });
-        }
+    // 2. نشغل الـ SDK
+    Pi.init({ version: "2.0", sandbox: true });
+    addLog('SDK Initialized. Sandbox: true');
 
-        function pay() {
-            log('Creating payment...');
-            Pi.createPayment({
-                amount: 0.1,
-                memo: "Cortex Test Payment",
-                metadata: { test: true }
-            }, {
-                onReadyForServerApproval: function(paymentId) {
-                    log('✅ onReadyForServerApproval: ' + paymentId);
-                    Pi.approve(paymentId);
-                },
-                onReadyForServerCompletion: function(paymentId, txid) {
-                    log('✅ onReadyForServerCompletion: ' + txid);
-                    Pi.complete(paymentId);
-                },
-                onCancel: function(paymentId) {
-                    log('❌ Cancelled: ' + paymentId);
-                },
-                onError: function(error, payment) {
-                    log('❌ Error: ' + error);
-                }
-            });
+    function addLog(text) {
+      const logDiv = document.getElementById('log');
+      logDiv.innerHTML += '<br>> ' + text;
+    }
+
+    async function login() {
+      try {
+        addLog('Button clicked. Starting auth...');
+        const scopes = ['payments'];
+        // لازم نمرر الدالة هنا
+        const auth = await Pi.authenticate(scopes, onIncompletePaymentFound);
+        addLog('Login SUCCESS: ' + auth.user.username);
+      } catch (error) {
+        addLog('Login FAILED: ' + error.message);
+        alert('فشل تسجيل الدخول: ' + error.message);
+      }
+    }
+
+    function pay() {
+      addLog('Creating payment...');
+      Pi.createPayment({
+        amount: 0.1,
+        memo: "Test Payment",
+        metadata: {}
+      }, {
+        onReadyForServerApproval: function(paymentId) {
+          addLog('Payment needs approval: ' + paymentId);
+          Pi.approvePayment(paymentId);
+        },
+        onReadyForServerCompletion: function(paymentId, txid) {
+          addLog('Payment SUCCESS! TX: ' + txid);
+          alert('تم الدفع التجريبي بنجاح');
+        },
+        onCancel: function(paymentId) {
+          addLog('Payment cancelled: ' + paymentId);
+        },
+        onError: function(error, payment) {
+          addLog('Payment ERROR: ' + error.message);
+          alert('فشل الدفع: ' + error.message);
         }
-    </script>
+      });
+    }
+  </script>
 </body>
 </html>
