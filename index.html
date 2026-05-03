@@ -13,9 +13,17 @@
   <div id="log" style="background:#1e293b;padding:20px;border-radius:8px;margin-top:20px;text-align:left">Ready to test...</div>
 
   <script>
+    // رابط الـ Backend حقك من Render
+    const BACKEND_URL = "https://-pi-backend-kv9g.onrender.com";
+
     function onIncompletePaymentFound(payment) {
       addLog('Found incomplete payment: ' + payment.identifier);
-      Pi.completePayment(payment.identifier);
+      // نكمل الدفع من السيرفر
+      fetch(BACKEND_URL + '/complete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ paymentId: payment.identifier, txid: payment.transaction.txid })
+      });
     }
 
     Pi.init({ version: "2.0", sandbox: true });
@@ -42,15 +50,44 @@
       Pi.createPayment({
         amount: 0.1,
         memo: "Test Payment",
-        metadata: { test: "1", orderId: Date.now() } // ← هذا التعديل المهم
+        metadata: { test: "1", orderId: Date.now() }
       }, {
         onReadyForServerApproval: function(paymentId) {
           addLog('Payment needs approval: ' + paymentId);
-          Pi.approvePayment(paymentId);
+          
+          // نرسل للسيرفر يوافق
+          fetch(BACKEND_URL + '/approve', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ paymentId: paymentId })
+          })
+          .then(res => res.json())
+          .then(data => {
+            if(data.status === 'approved') {
+              addLog('Server approved payment ✅');
+            } else {
+              addLog('Server approval FAILED');
+            }
+          })
+          .catch(err => addLog('Approve error: ' + err));
         },
         onReadyForServerCompletion: function(paymentId, txid) {
           addLog('Payment SUCCESS! TX: ' + txid);
-          alert('تم الدفع التجريبي بنجاح');
+          
+          // نرسل للسيرفر يكمل العملية
+          fetch(BACKEND_URL + '/complete', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ paymentId: paymentId, txid: txid })
+          })
+          .then(res => res.json())
+          .then(data => {
+            if(data.status === 'completed') {
+              addLog('Server completed payment ✅');
+              alert('تم الدفع التجريبي بنجاح');
+            }
+          })
+          .catch(err => addLog('Complete error: ' + err));
         },
         onCancel: function(paymentId) {
           addLog('Payment cancelled: ' + paymentId);
