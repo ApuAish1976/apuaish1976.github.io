@@ -1,103 +1,119 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Cortex Test</title>
+  <title>Pi Test Payment</title>
   <script src="https://sdk.minepi.com/pi-sdk.js"></script>
+  <style>
+    body { font-family: sans-serif; text-align: center; padding: 20px; background: #f5f5f5; }
+    button { font-size: 18px; padding: 15px 25px; margin: 10px; border: none; border-radius: 8px; cursor: pointer; }
+    .login-btn { background: #8e44ad; color: white; }
+    .pay-btn { background: #27ae60; color: white; }
+    .pay-btn:disabled { background: #95a5a6; }
+    #log { margin-top: 20px; background: white; padding: 15px; border-radius: 8px; text-align: left; direction: ltr; max-height: 300px; overflow-y: auto; }
+  </style>
 </head>
-<body style="background:#0f172a;color:white;text-align:center;padding:50px;font-family:sans-serif">
-  <h1>Cortex Sandbox Test</h1>
-  <button onclick="login()" style="padding:15px 30px;font-size:18px;background:#6366f1;border:none;border-radius:8px;color:white;margin:10px">1. Login</button>
-  <button onclick="pay()" style="padding:15px 30px;font-size:18px;background:#10b981;border:none;border-radius:8px;color:white;margin:10px">2. Pay 0.1 Test</button>
-  <div id="log" style="background:#1e293b;padding:20px;border-radius:8px;margin-top:20px;text-align:left">Ready to test...</div>
+<body>
+  <h1>Pi Payment Test</h1>
+  <p>Click Login first, then Pay</p>
+  
+  <button id="loginBtn" class="login-btn">1. Login</button>
+  <button id="payBtn" class="pay-btn" disabled>2. Pay 0.1 Test</button>
+  
+  <div id="log"></div>
 
   <script>
-    // رابط الـ Backend حقك من Render
-    const BACKEND_URL = "https://-pi-backend-kv9g.onrender.com";
-
-    function onIncompletePaymentFound(payment) {
-      addLog('Found incomplete payment: ' + payment.identifier);
-      // نكمل الدفع من السيرفر
-      fetch(BACKEND_URL + '/complete', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ paymentId: payment.identifier, txid: payment.transaction.txid })
-      });
-    }
-
+    // Backend URL - Make sure this is correct
+    const BACKEND_URL = "https://pi-backend-kv9g.onrender.com";
+    
+    // Init Pi SDK - set sandbox: false for real Pi
     Pi.init({ version: "2.0", sandbox: true });
-    addLog('SDK Initialized. Sandbox: true');
-
-    function addLog(text) {
+    
+    let currentUser = null;
+    
+    // Log function
+    function log(msg) {
       const logDiv = document.getElementById('log');
-      logDiv.innerHTML += '<br>> ' + text;
+      const time = new Date().toLocaleTimeString();
+      logDiv.innerHTML += `[${time}] ${msg}<br>`;
+      logDiv.scrollTop = logDiv.scrollHeight;
+      console.log(msg);
     }
-
-    async function login() {
+    
+    // Handle incomplete payments
+    function onIncompletePaymentFound(payment) {
+      log('Found incomplete payment: ' + payment.identifier);
+    }
+    
+    // Login handler with correct scopes
+    async function handleLogin() {
+      log('Login button clicked. Starting auth...');
       try {
-        addLog('Button clicked. Starting auth...');
-        const scopes = ['payments'];
-        const auth = await Pi.authenticate(scopes, onIncompletePaymentFound);
-        addLog('Login SUCCESS: ' + auth.user.username);
-      } catch (error) {
-        addLog('Login FAILED: ' + error.message);
+        const scopes = ['username', 'payments'];
+        const authResult = await Pi.authenticate(scopes, onIncompletePaymentFound);
+        currentUser = authResult.user;
+        log('Login SUCCESS: ' + currentUser.username);
+        document.getElementById('payBtn').disabled = false;
+      } catch (err) {
+        log('Login FAILED: ' + err.message);
       }
     }
-
-    function pay() {
-      addLog('Creating payment...');
-      Pi.createPayment({
-        amount: 0.1,
-        memo: "Test Payment",
-        metadata: { test: "1", orderId: Date.now() }
-      }, {
-        onReadyForServerApproval: function(paymentId) {
-          addLog('Payment needs approval: ' + paymentId);
+    
+    // Payment handler
+    async function handlePayment() {
+      if (!currentUser) {
+        log('Please login first');
+        return;
+      }
+      
+      log('Starting payment...');
+      try {
+        await Pi.createPayment({
+          amount: 0.1,
+          memo: "Test payment from app",
+          metadata: { test: true }
+        }, {
+          onReadyForServerApproval: function(paymentId) {
+            log('Got paymentId: ' + paymentId + ' -> calling backend /approve');
+            fetch(`${BACKEND_URL}/approve`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ paymentId: paymentId })
+            }).then(res => res.json())
+              .then(data => log('Approve response: ' + JSON.stringify(data)))
+              .catch(err => log('Approve ERROR: ' + err.message));
+          },
           
-          // نرسل للسيرفر يوافق
-          fetch(BACKEND_URL + '/approve', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ paymentId: paymentId })
-          })
-          .then(res => res.json())
-          .then(data => {
-            if(data.status === 'approved') {
-              addLog('Server approved payment ✅');
-            } else {
-              addLog('Server approval FAILED');
-            }
-          })
-          .catch(err => addLog('Approve error: ' + err));
-        },
-        onReadyForServerCompletion: function(paymentId, txid) {
-          addLog('Payment SUCCESS! TX: ' + txid);
+          onReadyForServerCompletion: function(paymentId, txid) {
+            log('Payment completed on blockchain. txid: ' + txid);
+            fetch(`${BACKEND_URL}/complete`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ paymentId: paymentId, txid: txid })
+            }).then(res => res.json())
+              .then(data => log('Complete response: ' + JSON.stringify(data)))
+              .catch(err => log('Complete ERROR: ' + err.message));
+          },
           
-          // نرسل للسيرفر يكمل العملية
-          fetch(BACKEND_URL + '/complete', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ paymentId: paymentId, txid: txid })
-          })
-          .then(res => res.json())
-          .then(data => {
-            if(data.status === 'completed') {
-              addLog('Server completed payment ✅');
-              alert('تم الدفع التجريبي بنجاح');
-            }
-          })
-          .catch(err => addLog('Complete error: ' + err));
-        },
-        onCancel: function(paymentId) {
-          addLog('Payment cancelled: ' + paymentId);
-        },
-        onError: function(error, payment) {
-          addLog('Payment ERROR: ' + error.message);
-          alert('فشل الدفع: ' + error.message);
-        }
-      });
+          onCancel: function(paymentId) {
+            log('Payment cancelled: ' + paymentId);
+          },
+          
+          onError: function(error, payment) {
+            log('Payment ERROR: ' + error.message);
+          }
+        });
+      } catch (err) {
+        log('Create payment FAILED: ' + err.message);
+      }
     }
+    
+    // Bind buttons
+    document.getElementById('loginBtn').addEventListener('click', handleLogin);
+    document.getElementById('payBtn').addEventListener('click', handlePayment);
+    
+    log('App loaded. Ready.');
   </script>
 </body>
 </html>
