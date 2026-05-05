@@ -6,10 +6,10 @@
     <title>Cortex Escrow</title>
     <style>
         body { font-family: sans-serif; padding: 20px; max-width: 500px; margin: auto; }
-        input, textarea, button, select { width: 100%; padding: 12px; margin: 8px 0; font-size: 16px; box-sizing: border-box; }
-        button { background: #8A2BE2; color: white; border: none; cursor: pointer; }
-        #result { margin-top: 20px; padding: 15px; background: #f0f0f0; display: none; }
-       .lang-switch { text-align: right; margin-bottom: 15px; }
+        input, textarea, button, select { width: 100%; padding: 12px; margin: 8px 0; font-size: 16px; box-sizing: border-box; border-radius: 8px; border: 1px solid #ddd; }
+        button { background: #8A2BE2; color: white; border: none; cursor: pointer; font-weight: bold; }
+        #result { margin-top: 20px; padding: 15px; background: #f0f0f0; border-radius: 8px; display: none; }
+   .lang-switch { text-align: right; margin-bottom: 15px; }
     </style>
 </head>
 <body>
@@ -17,14 +17,17 @@
         <select id="language" onchange="setLanguage(this.value)">
             <option value="ar">العربية</option>
             <option value="en">English</option>
-            <option value="es">Español</option>
-            <option value="fr">Français</option>
-            <option value="hi">हिन्दी</option>
-            <option value="zh">中文</option>
         </select>
     </div>
 
     <h2 data-i18n="title">إنشاء صفقة ضمان جديدة</h2>
+
+    <select id="deal-type">
+        <option value="digital" data-i18n="type_digital">منتج رقمي - حساب، كود، ملف</option>
+        <option value="service" data-i18n="type_service">خدمة - تصميم، برمجة، استشارة</option>
+        <option value="physical" data-i18n="type_physical">منتج ملموس - شحن مطلوب</option>
+        <option value="other" data-i18n="type_other">أخرى</option>
+    </select>
 
     <input type="text" id="title" data-i18n-placeholder="item_placeholder">
     <input type="number" id="amount" data-i18n-placeholder="price_placeholder" step="0.0000001">
@@ -39,12 +42,15 @@
 
     <script src="https://sdk.minepi.com/pi-sdk.js"></script>
     <script>
-        const BACKEND_URL = "https://cortex-escrow-backend.onrender.com"; // غيره لرابطك
+        const BACKEND_URL = "https://pi-backend-kv9g.onrender.com";
 
-        // 1. كل النصوص حق كل اللغات هنا
         const translations = {
             ar: {
                 title: "إنشاء صفقة ضمان جديدة",
+                type_digital: "منتج رقمي - حساب، كود، ملف",
+                type_service: "خدمة - تصميم، برمجة، استشارة",
+                type_physical: "منتج ملموس - شحن مطلوب",
+                type_other: "أخرى",
                 item_placeholder: "وش تبيع؟ مثال: حساب Netflix",
                 price_placeholder: "السعر بـ Pi",
                 create_btn: "إنشاء رابط الصفقة",
@@ -57,6 +63,10 @@
             },
             en: {
                 title: "Create New Escrow Deal",
+                type_digital: "Digital Product - Account, Code, File",
+                type_service: "Service - Design, Code, Consulting",
+                type_physical: "Physical Product - Shipping Required",
+                type_other: "Other",
                 item_placeholder: "What are you selling? e.g: Netflix Account",
                 price_placeholder: "Price in Pi",
                 create_btn: "Create Deal Link",
@@ -66,60 +76,46 @@
                 alert_login: "Please login with Pi Browser",
                 alert_fill: "Fill all fields",
                 alert_copied: "Link copied"
-            },
-            es: {
-                title: "Crear Nuevo Acuerdo de Garantía",
-                item_placeholder: "¿Qué vendes? ej: Cuenta de Netflix",
-                price_placeholder: "Precio en Pi",
-                create_btn: "Crear Enlace del Acuerdo",
-                success_msg: "Acuerdo Creado ✅",
-                link_label: "Enlace del Comprador:",
-                copy_btn: "Copiar Enlace",
-                alert_login: "Inicia sesión con Pi Browser",
-                alert_fill: "Rellena todos los campos",
-                alert_copied: "Enlace copiado"
             }
-            // تقدر تضيف fr, hi, zh بنفس الطريقة
         };
 
-        // 2. دالة تغيير اللغة
         function setLanguage(lang) {
+            currentLang = lang;
             localStorage.setItem('lang', lang);
             document.documentElement.lang = lang;
             document.documentElement.dir = lang === 'ar'? 'rtl' : 'ltr';
-
             document.querySelectorAll('[data-i18n]').forEach(el => {
                 const key = el.getAttribute('data-i18n');
-                el.innerText = translations[lang][key] || translations['en'][key];
+                el.innerText = translations[currentLang][key] || translations['en'][key];
             });
             document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
                 const key = el.getAttribute('data-i18n-placeholder');
-                el.placeholder = translations[lang][key] || translations['en'][key];
+                el.placeholder = translations[currentLang][key] || translations['en'][key];
             });
         }
 
-        // 3. نشغل اللغة المناسبة أول ما تفتح الصفحة
-        const userLang = localStorage.getItem('lang') || (navigator.language || navigator.userLanguage).split('-')[0];
-        const defaultLang = translations[userLang]? userLang : 'en';
-        document.getElementById('language').value = defaultLang;
-        setLanguage(defaultLang);
+        const userLang = localStorage.getItem('lang') || 'ar';
+        let currentLang = translations[userLang]? userLang : 'en';
+        document.getElementById('language').value = currentLang;
+        setLanguage(currentLang);
 
-        // 4. كود Pi + إنشاء الصفقة نفس اللي قبل
         Pi.init({ version: "2.0" });
         let currentUser = null;
 
         Pi.authenticate(['username'], () => {}).then(auth => {
             currentUser = auth.user;
         }).catch(err => {
-            alert(translations[defaultLang].alert_login);
+            alert(translations[currentLang].alert_login);
         });
 
         async function createDeal() {
-            if (!currentUser) return alert(translations[defaultLang].alert_login);
+            if (!currentUser) return alert(translations[currentLang].alert_login);
 
             const title = document.getElementById('title').value;
             const amount = document.getElementById('amount').value;
-            if (!title ||!amount) return alert(translations[defaultLang].alert_fill);
+            const type = document.getElementById('deal-type').value;
+
+            if (!title ||!amount) return alert(translations[currentLang].alert_fill);
 
             const res = await fetch(`${BACKEND_URL}/create-deal`, {
                 method: 'POST',
@@ -127,13 +123,14 @@
                 body: JSON.stringify({
                     seller_uid: currentUser.uid,
                     title: title,
-                    amount: parseFloat(amount)
+                    amount: parseFloat(amount),
+                    type: type
                 })
             });
 
             const data = await res.json();
             if (data.success) {
-                document.getElementById('dealLink').value = data.dealLink.replace('your-frontend-url.com', 'apuaish1976.github.io');
+                document.getElementById('dealLink').value = data.dealLink;
                 document.getElementById('result').style.display = 'block';
             } else {
                 alert('Error: ' + data.error);
@@ -141,9 +138,15 @@
         }
 
         function copyLink() {
-            document.getElementById('dealLink').select();
-            document.execCommand('copy');
-            alert(translations[localStorage.getItem('lang')].alert_copied);
+            const linkInput = document.getElementById('dealLink');
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(linkInput.value);
+                alert(translations[currentLang].alert_copied);
+            } else {
+                linkInput.select();
+                document.execCommand('copy');
+                alert(translations[currentLang].alert_copied);
+            }
         }
     </script>
 </body>
