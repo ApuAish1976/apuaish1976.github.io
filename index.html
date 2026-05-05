@@ -9,30 +9,12 @@
         input, textarea, button, select { width: 100%; padding: 12px; margin: 8px 0; font-size: 16px; box-sizing: border-box; border-radius: 8px; border: 1px solid #ddd; }
         button { background: #8A2BE2; color: white; border: none; cursor: pointer; font-weight: bold; }
         #result { margin-top: 20px; padding: 15px; background: #f0f0f0; border-radius: 8px; display: none; }
-       .lang-switch { text-align: right; margin-bottom: 15px; }
-       .input-pi {
-            position: relative;
-        }
-       .input-pi input {
-            padding-right: 45px;
-        }
-       .input-pi span {
-            position: absolute;
-            right: 15px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: #666;
-            font-weight: bold;
-            pointer-events: none;
-        }
-        html[dir="ltr"].input-pi input {
-            padding-right: 12px;
-            padding-left: 45px;
-        }
-        html[dir="ltr"].input-pi span {
-            right: auto;
-            left: 15px;
-        }
+      .lang-switch { text-align: right; margin-bottom: 15px; }
+      .input-pi { position: relative; }
+      .input-pi input { padding-right: 45px; }
+      .input-pi span { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); color: #666; font-weight: bold; pointer-events: none; }
+        html[dir="ltr"].input-pi input { padding-right: 12px; padding-left: 45px; }
+        html[dir="ltr"].input-pi span { right: auto; left: 15px; }
     </style>
 </head>
 <body>
@@ -68,7 +50,6 @@
         <button onclick="copyLink()" data-i18n="copy_btn">نسخ الرابط</button>
     </div>
 
-    <script src="https://sdk.minepi.com/pi-sdk.js"></script>
     <script>
         const BACKEND_URL = "https://pi-backend-kv9g.onrender.com";
 
@@ -127,13 +108,19 @@
         document.getElementById('language').value = currentLang;
         setLanguage(currentLang);
 
-        Pi.init({ version: "2.0", sandbox: true });
         let currentUser = null;
 
-        Pi.authenticate(['username'], () => {}).then(auth => {
+        // Pi.init محذوف - App Studio سواه لك
+        function onIncompletePaymentFound(payment) {
+            console.log('Incomplete payment found:', payment);
+        }
+
+        Pi.authenticate(['username'], onIncompletePaymentFound).then(auth => {
             currentUser = auth.user;
+            console.log('Logged in:', currentUser.username);
         }).catch(err => {
             alert(translations[currentLang].alert_login);
+            console.error(err);
         });
 
         async function createDeal() {
