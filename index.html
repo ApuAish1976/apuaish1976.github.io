@@ -1,119 +1,181 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pi Test Payment</title>
-  <script src="https://sdk.minepi.com/pi-sdk.js"></script>
-  <style>
-    body { font-family: sans-serif; text-align: center; padding: 20px; background: #f5f5f5; }
-    button { font-size: 18px; padding: 15px 25px; margin: 10px; border: none; border-radius: 8px; cursor: pointer; }
-    .login-btn { background: #8e44ad; color: white; }
-    .pay-btn { background: #27ae60; color: white; }
-    .pay-btn:disabled { background: #95a5a6; }
-    #log { margin-top: 20px; background: white; padding: 15px; border-radius: 8px; text-align: left; direction: ltr; max-height: 300px; overflow-y: auto; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cortex Escrow</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; max-width: 500px; margin: auto; }
+        input, textarea, button, select { width: 100%; padding: 12px; margin: 8px 0; font-size: 16px; box-sizing: border-box; border-radius: 8px; border: 1px solid #ddd; }
+        button { background: #8A2BE2; color: white; border: none; cursor: pointer; font-weight: bold; }
+        #result { margin-top: 20px; padding: 15px; background: #f0f0f0; border-radius: 8px; display: none; }
+       .lang-switch { text-align: right; margin-bottom: 15px; }
+       .input-pi {
+            position: relative;
+        }
+       .input-pi input {
+            padding-right: 45px;
+        }
+       .input-pi span {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #666;
+            font-weight: bold;
+            pointer-events: none;
+        }
+        html[dir="ltr"].input-pi input {
+            padding-right: 12px;
+            padding-left: 45px;
+        }
+        html[dir="ltr"].input-pi span {
+            right: auto;
+            left: 15px;
+        }
+    </style>
 </head>
 <body>
-  <h1>Pi Payment Test</h1>
-  <p>Click Login first, then Pay</p>
-  
-  <button id="loginBtn" class="login-btn">1. Login</button>
-  <button id="payBtn" class="pay-btn" disabled>2. Pay 0.1 Test</button>
-  
-  <div id="log"></div>
+    <div class="lang-switch">
+        <select id="language" onchange="setLanguage(this.value)">
+            <option value="ar">العربية</option>
+            <option value="en">English</option>
+        </select>
+    </div>
 
-  <script>
-    // Backend URL - Make sure this is correct
-    const BACKEND_URL = "https://pi-backend-kv9g.onrender.com";
-    
-    // Init Pi SDK - set sandbox: false for real Pi
-    Pi.init({ version: "2.0", sandbox: true });
-    
-    let currentUser = null;
-    
-    // Log function
-    function log(msg) {
-      const logDiv = document.getElementById('log');
-      const time = new Date().toLocaleTimeString();
-      logDiv.innerHTML += `[${time}] ${msg}<br>`;
-      logDiv.scrollTop = logDiv.scrollHeight;
-      console.log(msg);
-    }
-    
-    // Handle incomplete payments
-    function onIncompletePaymentFound(payment) {
-      log('Found incomplete payment: ' + payment.identifier);
-    }
-    
-    // Login handler with correct scopes
-    async function handleLogin() {
-      log('Login button clicked. Starting auth...');
-      try {
-        const scopes = ['username', 'payments'];
-        const authResult = await Pi.authenticate(scopes, onIncompletePaymentFound);
-        currentUser = authResult.user;
-        log('Login SUCCESS: ' + currentUser.username);
-        document.getElementById('payBtn').disabled = false;
-      } catch (err) {
-        log('Login FAILED: ' + err.message);
-      }
-    }
-    
-    // Payment handler
-    async function handlePayment() {
-      if (!currentUser) {
-        log('Please login first');
-        return;
-      }
-      
-      log('Starting payment...');
-      try {
-        await Pi.createPayment({
-          amount: 0.1,
-          memo: "Test payment from app",
-          metadata: { test: true }
-        }, {
-          onReadyForServerApproval: function(paymentId) {
-            log('Got paymentId: ' + paymentId + ' -> calling backend /approve');
-            fetch(`${BACKEND_URL}/approve`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ paymentId: paymentId })
-            }).then(res => res.json())
-              .then(data => log('Approve response: ' + JSON.stringify(data)))
-              .catch(err => log('Approve ERROR: ' + err.message));
-          },
-          
-          onReadyForServerCompletion: function(paymentId, txid) {
-            log('Payment completed on blockchain. txid: ' + txid);
-            fetch(`${BACKEND_URL}/complete`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ paymentId: paymentId, txid: txid })
-            }).then(res => res.json())
-              .then(data => log('Complete response: ' + JSON.stringify(data)))
-              .catch(err => log('Complete ERROR: ' + err.message));
-          },
-          
-          onCancel: function(paymentId) {
-            log('Payment cancelled: ' + paymentId);
-          },
-          
-          onError: function(error, payment) {
-            log('Payment ERROR: ' + error.message);
-          }
+    <h2 data-i18n="title">إنشاء صفقة ضمان جديدة</h2>
+
+    <select id="deal-type">
+        <option value="digital" data-i18n="type_digital">منتج رقمي - حساب، كود، ملف</option>
+        <option value="service" data-i18n="type_service">خدمة - تصميم، برمجة، استشارة</option>
+        <option value="physical" data-i18n="type_physical">منتج ملموس - شحن مطلوب</option>
+        <option value="other" data-i18n="type_other">أخرى</option>
+    </select>
+
+    <input type="text" id="title" data-i18n-placeholder="item_placeholder">
+
+    <div class="input-pi">
+        <input type="number" id="amount" data-i18n-placeholder="price_placeholder" step="0.0000001">
+        <span>Pi</span>
+    </div>
+
+    <button onclick="createDeal()" data-i18n="create_btn">إنشاء رابط الصفقة</button>
+
+    <div id="result">
+        <strong data-i18n="success_msg">تم إنشاء الصفقة ✅</strong><br><br>
+        <strong data-i18n="link_label">رابط المشتري:</strong><br>
+        <input type="text" id="dealLink" readonly>
+        <button onclick="copyLink()" data-i18n="copy_btn">نسخ الرابط</button>
+    </div>
+
+    <script src="https://sdk.minepi.com/pi-sdk.js"></script>
+    <script>
+        const BACKEND_URL = "https://pi-backend-kv9g.onrender.com";
+
+        const translations = {
+            ar: {
+                title: "إنشاء صفقة ضمان جديدة",
+                type_digital: "منتج رقمي - حساب، كود، ملف",
+                type_service: "خدمة - تصميم، برمجة، استشارة",
+                type_physical: "منتج ملموس - شحن مطلوب",
+                type_other: "أخرى",
+                item_placeholder: "وش تبيع؟ مثال: حساب Netflix",
+                price_placeholder: "السعر",
+                create_btn: "إنشاء رابط الصفقة",
+                success_msg: "تم إنشاء الصفقة ✅",
+                link_label: "رابط المشتري:",
+                copy_btn: "نسخ الرابط",
+                alert_login: "لازم تسجل دخول بـ Pi Browser",
+                alert_fill: "عبي كل الخانات",
+                alert_copied: "تم نسخ الرابط"
+            },
+            en: {
+                title: "Create New Escrow Deal",
+                type_digital: "Digital Product - Account, Code, File",
+                type_service: "Service - Design, Code, Consulting",
+                type_physical: "Physical Product - Shipping Required",
+                type_other: "Other",
+                item_placeholder: "What are you selling? e.g: Netflix Account",
+                price_placeholder: "Price",
+                create_btn: "Create Deal Link",
+                success_msg: "Deal Created ✅",
+                link_label: "Buyer Link:",
+                copy_btn: "Copy Link",
+                alert_login: "Please login with Pi Browser",
+                alert_fill: "Fill all fields",
+                alert_copied: "Link copied"
+            }
+        };
+
+        function setLanguage(lang) {
+            currentLang = lang;
+            localStorage.setItem('lang', lang);
+            document.documentElement.lang = lang;
+            document.documentElement.dir = lang === 'ar'? 'rtl' : 'ltr';
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                el.innerText = translations[currentLang][key] || translations['en'][key];
+            });
+            document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+                const key = el.getAttribute('data-i18n-placeholder');
+                el.placeholder = translations[currentLang][key] || translations['en'][key];
+            });
+        }
+
+        const userLang = localStorage.getItem('lang') || 'ar';
+        let currentLang = translations[userLang]? userLang : 'en';
+        document.getElementById('language').value = currentLang;
+        setLanguage(currentLang);
+
+        Pi.init({ version: "2.0", sandbox: true });
+        let currentUser = null;
+
+        Pi.authenticate(['username'], () => {}).then(auth => {
+            currentUser = auth.user;
+        }).catch(err => {
+            alert(translations[currentLang].alert_login);
         });
-      } catch (err) {
-        log('Create payment FAILED: ' + err.message);
-      }
-    }
-    
-    // Bind buttons
-    document.getElementById('loginBtn').addEventListener('click', handleLogin);
-    document.getElementById('payBtn').addEventListener('click', handlePayment);
-    
-    log('App loaded. Ready.');
-  </script>
+
+        async function createDeal() {
+            if (!currentUser) return alert(translations[currentLang].alert_login);
+
+            const title = document.getElementById('title').value;
+            const amount = document.getElementById('amount').value;
+            const type = document.getElementById('deal-type').value;
+
+            if (!title ||!amount) return alert(translations[currentLang].alert_fill);
+
+            const res = await fetch(`${BACKEND_URL}/create-deal`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    seller_uid: currentUser.uid,
+                    title: title,
+                    amount: parseFloat(amount),
+                    type: type
+                })
+            });
+
+            const data = await res.json();
+            if (data.success) {
+                document.getElementById('dealLink').value = data.dealLink;
+                document.getElementById('result').style.display = 'block';
+            } else {
+                alert('Error: ' + data.error);
+            }
+        }
+
+        function copyLink() {
+            const linkInput = document.getElementById('dealLink');
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(linkInput.value);
+                alert(translations[currentLang].alert_copied);
+            } else {
+                linkInput.select();
+                document.execCommand('copy');
+                alert(translations[currentLang].alert_copied);
+            }
+        }
+    </script>
 </body>
 </html>
