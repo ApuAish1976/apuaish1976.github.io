@@ -1,87 +1,218 @@
-const express = require('express');
-const axios = require('axios');
-const cors = require('cors');
-const sqlite3 = require('sqlite3').verbose();
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cortex Escrow</title>
+    <script src="https://sdk.minepi.com/pi-sdk.js"></script>
+    <style>
+        :root {
+            --primary-color: #7c3aed;
+            --background-color: #f0f2f5;
+            --text-color: #1f2937;
+            --card-bg: #ffffff;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .container {
+            background-color: var(--card-bg);
+            padding: 2rem;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 420px;
+            text-align: center;
+        }
+        .logo {
+            font-size: 3rem;
+            margin-bottom: 0.5rem;
+        }
+        h1 {
+            color: var(--primary-color);
+            margin-bottom: 0.5rem;
+        }
+        p {
+            color: #6b7280;
+            margin-bottom: 2rem;
+        }
+        .input-group {
+            margin-bottom: 1rem;
+            text-align: right;
+        }
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+        input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-size: 1rem;
+        }
+        button {
+            width: 100%;
+            padding: 0.85rem;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        button:disabled {
+            background-color: #9ca3af;
+            cursor: not-allowed;
+        }
+        button:hover:not(:disabled) {
+            background-color: #6d28d9;
+        }
+        #status {
+            margin-top: 1.5rem;
+            font-weight: 500;
+            min-height: 24px;
+        }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">💜</div>
+        <h1>Cortex Escrow</h1>
+        <p>وسيط ضمان آمن ولامركزي على شبكة Pi</p>
+        
+        <div id="login-section">
+            <button id="login-button">تسجيل الدخول بـ Pi</button>
+        </div>
 
-const app = express();
-app.use(cors());
-app.use(express.json());
+        <div id="app-section" class="hidden">
+            <div class="input-group">
+                <label for="amount">المبلغ (Pi)</label>
+                <input type="number" id="amount" placeholder="مثال: 10" value="1">
+            </div>
+            <div class="input-group">
+                <label for="address">عنوان التسليم</label>
+                <input type="text" id="address" placeholder="أدخل عنوانك الكامل">
+            </div>
+            <button id="create-deal-button">إنشاء صفقة ضمان جديدة</button>
+        </div>
 
-const PORT = process.env.PORT || 3000;
-const PI_API_KEY = process.env.PI_API_KEY;
-const PI_API_URL = 'https://api.testnet.minepi.com';
-const HEADERS = { 'Authorization': `Key ${PI_API_KEY}` };
+        <div id="status"></div>
+    </div>
 
-// قاعدة البيانات مع حقل type
-const db = new sqlite3.Database('./escrow.db');
-db.run(`
-  CREATE TABLE IF NOT EXISTS deals (
-    id TEXT PRIMARY KEY,
-    seller_uid TEXT NOT NULL,
-    buyer_uid TEXT,
-    amount REAL NOT NULL,
-    status TEXT NOT NULL DEFAULT 'open',
-    seller_confirmed INTEGER DEFAULT 0,
-    buyer_confirmed INTEGER DEFAULT 0,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-  )
-`);
+    <script>
+        const Pi = window.Pi;
+        Pi.init({ version: "2.0", sandbox: true });
+        
+        const BACKEND_URL = 'https://pi-backend-kv9g.onrender.com';
+        const loginButton = document.getElementById('login-button');
+        const createDealButton = document.getElementById('create-deal-button');
+        const loginSection = document.getElementById('login-section');
+        const appSection = document.getElementById('app-section');
+        const statusDiv = document.getElementById('status');
+        const amountInput = document.getElementById('amount');
+        const addressInput = document.getElementById('address');
 
-// الصفحة الرئيسية للتأكد إن السيرفر شغال
-app.get('/', (req, res) => {
-  res.send('Pi Backend is running ✅');
-});
+        let currentUser = null;
 
-// إنشاء صفقة جديدة
-app.post('/deals/create', (req, res) => {
-  const { seller_uid, amount } = req.body;
-  const id = 'deal_' + Date.now();
-  db.run(
-    'INSERT INTO deals (id, seller_uid, amount, status) VALUES (?, ?, ?, ?)',
-    [id, seller_uid, amount, 'open'],
-    function (err) {
-      if (err) return res.status(500).json({ error: err.message });
-      res.json({ dealId: id });
-    }
-  );
-});
+        loginButton.addEventListener('click', async () => {
+            try {
+                statusDiv.textContent = 'جاري طلب الإذن...';
+                const scopes = ['username', 'payments'];
+                currentUser = await Pi.authenticate(scopes, onIncompletePaymentFound);
+                loginSection.classList.add('hidden');
+                appSection.classList.remove('hidden');
+                statusDiv.textContent = `أهلاً بك، ${currentUser.username}!`;
+            } catch (err) {
+                statusDiv.textContent = `فشل تسجيل الدخول: ${err.message}`;
+            }
+        });
 
-// جلب تفاصيل صفقة
-app.get('/deals/:id', (req, res) => {
-  db.get('SELECT * FROM deals WHERE id = ?', [req.params.id], (err, row) => {
-    if (err) return res.status(500).json({ error: err.message });
-    if (!row) return res.status(404).json({ error: 'Deal not found' });
-    res.json(row);
-  });
-});
+        createDealButton.addEventListener('click', async () => {
+            const amount = parseFloat(amountInput.value);
+            const address = addressInput.value.trim();
 
-// ===== Pi Payments Endpoints =====
-// 1. الموافقة على الدفع
-app.post('/payments/approve', async (req, res) => {
-  const { paymentId } = req.body;
-  console.log('Approving payment:', paymentId);
-  try {
-    await axios.post(`${PI_API_URL}/v2/payments/${paymentId}/approve`, {}, { headers: HEADERS });
-    res.status(200).json({ message: 'Approved' });
-  } catch (err) {
-    console.log('Approve error:', err.response?.data);
-    res.status(500).json({ error: 'Approval failed' });
-  }
-});
+            if (!amount || amount <= 0) {
+                statusDiv.textContent = 'الرجاء إدخال مبلغ صحيح.';
+                return;
+            }
+            if (!address) {
+                statusDiv.textContent = 'الرجاء إدخال عنوان التسليم.';
+                return;
+            }
 
-// 2. إكمال الدفع
-app.post('/payments/complete', async (req, res) => {
-  const { paymentId, txid } = req.body;
-  console.log('Completing payment:', paymentId, txid);
-  try {
-    await axios.post(`${PI_API_URL}/v2/payments/${paymentId}/complete`, { txid }, { headers: HEADERS });
-    res.status(200).json({ message: 'Completed' });
-  } catch (err) {
-    console.log('Complete error:', err.response?.data);
-    res.status(500).json({ error: 'Completion failed' });
-  }
-});
+            createDealButton.disabled = true;
+            statusDiv.textContent = 'جاري تجهيز الدفع...';
+            
+            const paymentData = {
+                amount: amount,
+                memo: `صفقة ضمان Cortex لعنوان: ${address}`,
+                metadata: { delivery_address: address }
+            };
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+            const callbacks = {
+                onReadyForServerApproval: (paymentId) => {
+                    statusDiv.textContent = 'بانتظار موافقة الخادم...';
+                    fetch(`${BACKEND_URL}/payments/approve`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ paymentId })
+                    });
+                },
+                onReadyForServerCompletion: (paymentId, txid) => {
+                    statusDiv.textContent = 'اكتمل الدفع! جاري حفظ الصفقة...';
+                    fetch(`${BACKEND_URL}/payments/complete`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ paymentId, txid })
+                    });
+                    createDealButton.disabled = false;
+                },
+                onCancel: (paymentId) => {
+                    statusDiv.textContent = 'تم إلغاء عملية الدفع.';
+                    createDealButton.disabled = false;
+                },
+                onError: (error, payment) => {
+                    statusDiv.textContent = `حدث خطأ: ${error.message}`;
+                    createDealButton.disabled = false;
+                }
+            };
+
+            Pi.createPayment(paymentData, callbacks);
+        });
+
+        function onIncompletePaymentFound(payment) {
+            console.log("Found an incomplete payment:", payment);
+            statusDiv.textContent = 'لديك دفعة غير مكتملة. جاري استكمالها...';
+            const paymentData = {
+                amount: payment.amount,
+                memo: payment.memo,
+                metadata: payment.metadata
+            };
+            const callbacks = {
+                onReadyForServerApproval: (paymentId) => {
+                    fetch(`${BACKEND_URL}/payments/approve`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ paymentId }) });
+                },
+                onReadyForServerCompletion: (paymentId, txid) => {
+                    fetch(`${BACKEND_URL}/payments/complete`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ paymentId, txid }) });
+                },
+                onCancel: () => {},
+                onError: () => {}
+            };
+            Pi.createPayment(paymentData, callbacks);
+        }
+    </script>
+</body>
+</html>
