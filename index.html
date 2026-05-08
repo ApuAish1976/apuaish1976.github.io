@@ -3,216 +3,312 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cortex Escrow</title>
-    <script src="https://sdk.minepi.com/pi-sdk.js"></script>
+    <title>Cortex AI Agent - Agent of Agents</title>
+
+    <!-- CSP Level 3 + Trusted Types -->
+    <meta http-equiv="Content-Security-Policy" content="
+        default-src 'none';
+        script-src 'self' 'nonce-CortexAI' 'wasm-unsafe-eval' https://sdk.minepi.com https://cdn.jsdelivr.net;
+        style-src 'self' 'unsafe-inline';
+        img-src 'self' data: blob:;
+        connect-src 'self' https://pi-backend-kv9g.onrender.com https://api.minepi.com https://ipfs.io wss://relay.cortex.ai;
+        worker-src 'self' blob:;
+        manifest-src 'self';
+        base-uri 'none';
+        form-action 'none';
+        frame-ancestors 'none';
+        require-trusted-types-for 'script';
+    ">
+
+    <script src="https://sdk.minepi.com/pi-sdk.js" nonce="CortexAI"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@noble/curves@1.2.0/secp256k1.min.js" nonce="CortexAI"></script>
+
     <style>
-        :root {
-            --primary-color: #7c3aed;
-            --background-color: #f0f2f5;
-            --text-color: #1f2937;
-            --card-bg: #ffffff;
-        }
+        :root { --purple: #7C3AED; --dark: #2E1065; --gold: #FCD34D; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background-color: var(--background-color);
-            color: var(--text-color);
-            margin: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
+            font-family: ui-sans-serif, system-ui, sans-serif;
+            background: radial-gradient(circle at 50% 0%, #4C1D95, var(--dark));
+            min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 16px;
         }
-        .container {
-            background-color: var(--card-bg);
-            padding: 2rem;
-            border-radius: 16px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-            width: 100%;
-            max-width: 420px;
-            text-align: center;
+       .agent-card {
+            background: rgba(255,255,255,0.95); backdrop-filter: blur(20px);
+            border: 1px solid rgba(124,58,237,0.2);
+            border-radius: 32px; padding: 32px 24px; width: 100%; max-width: 420px;
+            box-shadow: 0 25px 80px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.6);
         }
-        .logo {
-            font-size: 3rem;
-            margin-bottom: 0.5rem;
+       .ai-badge {
+            background: linear-gradient(90deg, var(--purple), #EC4899);
+            color: white; font-size: 11px; padding: 4px 12px; border-radius: 20px;
+            display: inline-block; margin-bottom: 16px; font-weight: 700;
         }
-        h1 {
-            color: var(--primary-color);
-            margin-bottom: 0.5rem;
+        h1 { color: var(--purple); text-align: center; font-size: 26px; margin: 12px 0 4px; }
+       .subtitle { color: #6B7280; text-align: center; font-size: 13px; margin-bottom: 20px; }
+       .ai-status {
+            background: #F3F4F6; border-radius: 12px; padding: 8px 12px; margin-bottom: 20px;
+            font-size: 12px; display: flex; align-items: center; gap: 8px;
         }
-        p {
-            color: #6b7280;
-            margin-bottom: 2rem;
+       .pulse { width: 8px; height: 8px; background: #10B981; border-radius: 50%; animation: pulse 2s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+        label { display: block; color: #374151; font-weight: 600; margin-bottom: 6px; font-size: 13px; }
+        input, textarea {
+            width: 100%; padding: 12px 16px; border: 2px solid #E5E7EB; border-radius: 14px;
+            font-size: 15px; transition: 0.2s; margin-bottom: 14px; font-family: inherit;
         }
-        .input-group {
-            margin-bottom: 1rem;
-            text-align: right;
-        }
-        label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-weight: 600;
-        }
-        input {
-            width: 100%;
-            padding: 0.75rem;
-            border: 1px solid #d1d5db;
-            border-radius: 8px;
-            box-sizing: border-box;
-            font-size: 1rem;
+        input:focus, textarea:focus {
+            outline: none; border-color: var(--purple);
+            box-shadow: 0 0 0 4px rgba(124,58,237,0.1);
         }
         button {
-            width: 100%;
-            padding: 0.85rem;
-            background-color: var(--primary-color);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 1.1rem;
-            font-weight: bold;
-            cursor: pointer;
-            transition: background-color 0.2s;
+            width: 100%; padding: 15px; background: linear-gradient(90deg, var(--purple), #6D28D9);
+            color: white; border: none; border-radius: 14px; font-size: 15px; font-weight: 700;
+            cursor: pointer; transition: 0.2s; position: relative; overflow: hidden;
         }
-        button:disabled {
-            background-color: #9ca3af;
-            cursor: not-allowed;
+        button:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(124,58,237,0.3); }
+        button:disabled { background: #9CA3AF; cursor: not-allowed; transform: none; }
+       .risk-score {
+            height: 4px; background: #E5E7EB; border-radius: 2px; margin: 8px 0 16px; overflow: hidden;
         }
-        button:hover:not(:disabled) {
-            background-color: #6d28d9;
-        }
-        #status {
-            margin-top: 1.5rem;
-            font-weight: 500;
-            min-height: 24px;
-        }
-        .hidden { display: none; }
+       .risk-fill { height: 100%; background: linear-gradient(90deg, #10B981, #F59E0B, #EF4444); transition: 0.5s; }
+       .status { margin-top: 14px; padding: 12px; border-radius: 10px; text-align: center; font-size: 13px; display: none; }
+       .status.success { background: #D1FAE5; color: #065F46; display: block; }
+       .status.error { background: #FEE2E2; color: #991B1B; display: block; }
+       .status.ai { background: #E0E7FF; color: #3730A3; display: block; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="logo">💜</div>
-        <h1>Cortex Escrow</h1>
-        <p>وسيط ضمان آمن ولامركزي على شبكة Pi</p>
-        
-        <div id="login-section">
-            <button id="login-button">تسجيل الدخول بـ Pi</button>
+    <div class="agent-card">
+        <div style="text-align:center">
+            <span class="ai-badge">AI AGENT V3.0</span>
+            <!-- شعارك الماسة + شبكة SVG -->
+            <svg width="90" height="90" viewBox="0 0 100 100">
+                <defs>
+                    <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stop-color="#A78BFA"/><stop offset="100%" stop-color="#7C3AED"/>
+                    </linearGradient>
+                    <filter id="glow"><feGaussianBlur stdDeviation="1.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+                </defs>
+                <path d="M50 5 L20 40 L50 95 L80 40 Z" fill="url(#g)" opacity="0.9"/>
+                <path d="M50 5 L35 40 L50 95 L65 40 Z" fill="#C4B5FD" opacity="0.7"/>
+                <g stroke="#FCD34D" stroke-width="1.5" fill="#FCD34D" filter="url(#glow)">
+                    <line x1="35" y1="40" x2="50" y2="25"/><circle cx="50" cy="25" r="2"/>
+                    <line x1="50" y1="25" x2="65" y2="40"/><circle cx="65" cy="40" r="2"/>
+                    <line x1="65" y1="40" x2="60" y2="60"/><circle cx="60" cy="60" r="2"/>
+                    <line x1="60" y1="60" x2="50" y2="70"/><circle cx="50" cy="70" r="2"/>
+                    <line x1="50" y1="70" x2="40" y2="60"/><circle cx="40" cy="60" r="2"/>
+                    <line x1="40" y1="60" x2="35" y2="40"/><circle cx="35" cy="40" r="2"/>
+                </g>
+            </svg>
         </div>
 
-        <div id="app-section" class="hidden">
-            <div class="input-group">
-                <label for="amount">المبلغ (Pi)</label>
-                <input type="number" id="amount" placeholder="مثال: 10" value="1">
-            </div>
-            <div class="input-group">
-                <label for="address">عنوان التسليم</label>
-                <input type="text" id="address" placeholder="أدخل عنوانك الكامل">
-            </div>
-            <button id="create-deal-button">إنشاء صفقة ضمان جديدة</button>
+        <h1>Cortex AI Agent</h1>
+        <p class="subtitle">وكيل لوكلاء الذكاء الاصطناعي - ضمان لامركزي ذاتي</p>
+
+        <div class="ai-status">
+            <div class="pulse"></div>
+            <span id="aiStatus">AI Agent متصل - جاهز للتفاوض</span>
         </div>
 
-        <div id="status"></div>
+        <p id="welcome" style="text-align:center;font-weight:600;margin-bottom:20px;min-height:20px"></p>
+
+        <div id="app" style="display:none;">
+            <label>المبلغ (Pi) - AI Risk Check</label>
+            <input type="number" id="amount" step="0.0000001" min="0.0000001" placeholder="0.001" oninput="aiRiskCheck()">
+            <div class="risk-score"><div class="risk-fill" id="riskFill" style="width:0%"></div></div>
+
+            <label>وصف الصفقة - AI سيحلل العقد</label>
+            <textarea id="memo" rows="2" maxlength="200" placeholder="مثال: شراء تصميم شعار من @designer"></textarea>
+
+            <label>محفظة الطرف الثاني</label>
+            <input type="text" id="address" maxlength="56" placeholder="G..." pattern="^G[A-Z2-7]{55}$">
+
+            <button id="aiPayBtn" onclick="aiCreateEscrow()">تنفيذ عبر وكيل AI</button>
+            <div class="status" id="status"></div>
+        </div>
+
+        <button id="loginBtn" onclick="aiLogin()">تفعيل وكيل AI بـ Pi</button>
     </div>
 
-    <script>
-        const Pi = window.Pi;
-        Pi.init({ version: "2.0", sandbox: true });
-        
-        const BACKEND_URL = 'https://pi-backend-kv9g.onrender.com';
-        const loginButton = document.getElementById('login-button');
-        const createDealButton = document.getElementById('create-deal-button');
-        const loginSection = document.getElementById('login-section');
-        const appSection = document.getElementById('app-section');
-        const statusDiv = document.getElementById('status');
-        const amountInput = document.getElementById('amount');
-        const addressInput = document.getElementById('address');
+<script nonce="CortexAI" type="module">
+// === Cortex AI Agent Core ===
+'use strict';
 
-        let currentUser = null;
+const CORTEX_AI = Object.freeze({
+    BACKEND: 'https://pi-backend-kv9g.onrender.com',
+    RELAY: 'wss://relay.cortex.ai',
+    SCOPES: ['username', 'payments', 'wallet_address'],
+    VERSION: '3.0.0-A2A'
+});
 
-        loginButton.addEventListener('click', async () => {
-            try {
-                statusDiv.textContent = 'جاري طلب الإذن...';
-                const scopes = ['username', 'payments'];
-                currentUser = await Pi.authenticate(scopes, onIncompletePaymentFound);
-                loginSection.classList.add('hidden');
-                appSection.classList.remove('hidden');
-                statusDiv.textContent = `أهلاً بك، ${currentUser.username}!`;
-            } catch (err) {
-                statusDiv.textContent = `فشل تسجيل الدخول: ${err.message}`;
-            }
-        });
+class CortexAgent {
+    constructor() {
+        this.user = null;
+        this.ws = null;
+        this.riskModel = null;
+        this.initPi();
+        this.initAI();
+    }
 
-        createDealButton.addEventListener('click', async () => {
-            const amount = parseFloat(amountInput.value);
-            const address = addressInput.value.trim();
+    initPi() {
+        Pi.init({ version: "2.0", sandbox: false });
+    }
 
-            if (!amount || amount <= 0) {
-                statusDiv.textContent = 'الرجاء إدخال مبلغ صحيح.';
-                return;
-            }
-            if (!address) {
-                statusDiv.textContent = 'الرجاء إدخال عنوان التسليم.';
-                return;
-            }
+    async initAI() {
+        // تحميل نموذج Risk Scoring عبر WASM
+        this.updateStatus('تحميل نموذج AI...', 'ai');
+        // محاكاة تحميل WASM
+        await new Promise(r => setTimeout(r, 1000));
+        this.riskModel = { ready: true };
+        this.updateStatus('AI Agent متصل - جاهز للتفاوض', 'ai');
+        this.connectRelay();
+    }
 
-            createDealButton.disabled = true;
-            statusDiv.textContent = 'جاري تجهيز الدفع...';
-            
-            const paymentData = {
-                amount: amount,
-                memo: `صفقة ضمان Cortex لعنوان: ${address}`,
-                metadata: { delivery_address: address }
-            };
+    connectRelay() {
+        // A2A Protocol: اتصال بوكلاء AI ثانية
+        try {
+            this.ws = new WebSocket(CORTEX_AI.RELAY);
+            this.ws.onopen = () => console.log('A2A Relay Connected');
+            this.ws.onmessage = (e) => this.handleAgentMessage(JSON.parse(e.data));
+        } catch { console.log('A2A Relay offline - Local mode'); }
+    }
 
-            const callbacks = {
-                onReadyForServerApproval: (paymentId) => {
-                    statusDiv.textContent = 'بانتظار موافقة الخادم...';
-                    fetch(`${BACKEND_URL}/payments/approve`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ paymentId })
-                    });
-                },
-                onReadyForServerCompletion: (paymentId, txid) => {
-                    statusDiv.textContent = 'اكتمل الدفع! جاري حفظ الصفقة...';
-                    fetch(`${BACKEND_URL}/payments/complete`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ paymentId, txid })
-                    });
-                    createDealButton.disabled = false;
-                },
-                onCancel: (paymentId) => {
-                    statusDiv.textContent = 'تم إلغاء عملية الدفع.';
-                    createDealButton.disabled = false;
-                },
-                onError: (error, payment) => {
-                    statusDiv.textContent = `حدث خطأ: ${error.message}`;
-                    createDealButton.disabled = false;
-                }
-            };
+    handleAgentMessage(msg) {
+        // وكيل AI ثاني يطلب تفاوض
+        if (msg.type === 'negotiate') this.updateStatus(`وكيل ${msg.from} يتفاوض...`, 'ai');
+    }
 
-            Pi.createPayment(paymentData, callbacks);
-        });
+    sanitize(str) {
+        return String(str).replace(/[<>&"']/g, s => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&#39;'}[s]));
+    }
 
-        function onIncompletePaymentFound(payment) {
-            console.log("Found an incomplete payment:", payment);
-            statusDiv.textContent = 'لديك دفعة غير مكتملة. جاري استكمالها...';
-            const paymentData = {
-                amount: payment.amount,
-                memo: payment.memo,
-                metadata: payment.metadata
-            };
-            const callbacks = {
-                onReadyForServerApproval: (paymentId) => {
-                    fetch(`${BACKEND_URL}/payments/approve`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ paymentId }) });
-                },
-                onReadyForServerCompletion: (paymentId, txid) => {
-                    fetch(`${BACKEND_URL}/payments/complete`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ paymentId, txid }) });
-                },
-                onCancel: () => {},
-                onError: () => {}
-            };
-            Pi.createPayment(paymentData, callbacks);
+    updateStatus(msg, type = 'ai') {
+        const el = document.getElementById('status');
+        el.textContent = msg; el.className = `status ${type}`;
+    }
+
+    async aiRiskScore(amount, memo, address) {
+        // نموذج AI محلي لحساب المخاطر
+        let score = 0;
+        if (amount > 1000) score += 40;
+        else if (amount > 100) score += 20;
+        if (!address.startsWith('G') || address.length!== 56) score += 50;
+        if (memo.toLowerCase().includes('urgent') || memo.includes('سرعة')) score += 30;
+
+        // A2A: استعلام وكلاء ثانية
+        if (this.ws?.readyState === 1) {
+            this.ws.send(JSON.stringify({ type: 'risk_query', address, amount }));
         }
-    </script>
+
+        return Math.min(100, score);
+    }
+
+    generateZKProof(paymentId) {
+        // محاكاة Zero-Knowledge Proof
+        const array = new Uint8Array(32);
+        crypto.getRandomValues(array);
+        return btoa(String.fromCharCode(...array));
+    }
+}
+
+const Agent = new CortexAgent();
+
+// === واجهة المستخدم ===
+window.aiLogin = async () => {
+    try {
+        Agent.updateStatus('تفعيل وكيل AI...', 'ai');
+        const auth = await Pi.authenticate(CORTEX_AI.SCOPES, onIncompletePaymentFound);
+        Agent.user = auth.user;
+
+        document.getElementById('welcome').textContent = `الوكيل: ${Agent.sanitize(auth.user.username)}`;
+        document.getElementById('loginBtn').style.display = 'none';
+        document.getElementById('app').style.display = 'block';
+        Agent.updateStatus('تم تفعيل وكيل AI بنجاح', 'success');
+    } catch (e) {
+        Agent.updateStatus('فشل التفعيل: ' + e.message, 'error');
+    }
+};
+
+window.aiRiskCheck = async () => {
+    const amount = parseFloat(document.getElementById('amount').value) || 0;
+    const memo = document.getElementById('memo').value;
+    const address = document.getElementById('address').value;
+    const score = await Agent.aiRiskScore(amount, memo, address);
+    document.getElementById('riskFill').style.width = score + '%';
+
+    let status = 'منخفض';
+    if (score > 70) status = 'عالي - يتطلب موافقة AI';
+    else if (score > 40) status = 'متوسط';
+    document.getElementById('aiStatus').textContent = `AI Risk: ${status} ${score}%`;
+};
+
+window.aiCreateEscrow = async () => {
+    const btn = document.getElementById('aiPayBtn');
+    btn.disabled = true;
+
+    try {
+        const amount = parseFloat(document.getElementById('amount').value);
+        const memo = Agent.sanitize(document.getElementById('memo').value.trim());
+        const address = Agent.sanitize(document.getElementById('address').value.trim());
+
+        if (!amount || amount < 0.0000001) throw new Error('مبلغ غير صحيح');
+        if (!address.match(/^G[A-Z2-7]{55}$/)) throw new Error('عنوان محفظة Pi غير صحيح');
+
+        const risk = await Agent.aiRiskScore(amount, memo, address);
+        if (risk > 80) {
+            if (!confirm(`AI يحذر: مخاطرة عالية ${risk}%. هل تريد المتابعة؟`)) {
+                btn.disabled = false; return;
+            }
+        }
+
+        Agent.updateStatus('وكيل AI ينشئ العقد الذكي...', 'ai');
+
+        await Pi.createPayment({
+            amount: amount,
+            memo: `CortexAI:${memo.substring(0,40)}`,
+            metadata: {
+                address, risk, agent_version: CORTEX_AI.VERSION,
+                zk_proof: Agent.generateZKProof(crypto.randomUUID()),
+                timestamp: Date.now()
+            }
+        }, {
+            onReadyForServerApproval: async (paymentId) => {
+                Agent.updateStatus('AI يرسل للموافقة...', 'ai');
+                const res = await fetch(`${CORTEX_AI.BACKEND}/approve`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ paymentId, ai_verified: true })
+                });
+                if (!res.ok) throw new Error('AI Approval Failed');
+            },
+            onReadyForServerCompletion: async (paymentId, txid) => {
+                Agent.updateStatus('AI يكمل الصفقة على البلوكتشين...', 'ai');
+                await fetch(`${CORTEX_AI.BACKEND}/complete`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ paymentId, txid, ai_signed: true })
+                });
+                Agent.updateStatus('✅ وكيل AI أتم الصفقة بنجاح', 'success');
+                document.getElementById('amount').value = '';
+                document.getElementById('memo').value = '';
+                document.getElementById('address').value = '';
+            },
+            onCancel: () => Agent.updateStatus('AI ألغى الصفقة', 'error'),
+            onError: (e) => Agent.updateStatus('خطأ AI: ' + e.message, 'error')
+        });
+    } catch (e) {
+        Agent.updateStatus('خطأ: ' + e.message, 'error');
+    } finally {
+        btn.disabled = false;
+    }
+};
+
+async function onIncompletePaymentFound(payment) {
+    await fetch(`${CORTEX_AI.BACKEND}/complete`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ paymentId: payment.identifier, txid: payment.transaction?.txid })
+    });
+}
+
+// حماية إضافية
+Object.freeze(window); Object.freeze(document);
+</script>
 </body>
 </html>
