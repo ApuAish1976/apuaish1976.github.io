@@ -3,59 +3,104 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Cortex Escrow - Genesis V8</title>
-    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'nonce-G8' https://sdk.minepi.com; style-src 'self' 'unsafe-inline'; connect-src 'self' https://pi-backend-kv9g.onrender.com https://api.minepi.com https://ipfs.io https://polygon-rpc.com; media-src 'self' blob:; img-src 'self' data: https://*; font-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests;">
-    <script src="https://sdk.minepi.com/pi-sdk.js" crossorigin="anonymous" nonce="G8"></script>
+    <title>Cortex Escrow - Genesis V9.0</title>
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'nonce-CORTEX90' https://sdk.minepi.com; style-src 'self' 'unsafe-inline'; connect-src 'self' https://pi-backend-kv9g.onrender.com https://api.minepi.com https://ipfs.io https://polygon-rpc.com; media-src 'self' blob:; img-src 'self' data: https://*; font-src 'self' data:; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests;">
+    <script src="https://sdk.minepi.com/pi-sdk.js" crossorigin="anonymous" nonce="CORTEX90"></script>
     <style>
         :root { --p:#7C3AED; --s:#EC4899; --bg:#0A0A15; --card:#13132B; --txt:#E5E7EB; --ok:#10B981; --err:#EF4444; }
         * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--txt); min-height: 100vh; padding: 12px; }
-    .genesis { background: linear-gradient(145deg,#13132B,#0F0F23); border: 1px solid var(--p); border-radius: 28px; padding: 20px; max-width: 540px; margin: 0 auto; box-shadow: 0 0 60px rgba(124,58,237,0.25), inset 0 1px 0 rgba(255,255,255,0.05); }
-        h1 { background: linear-gradient(90deg,#A78BFA,#EC4899); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-align: center; font-size: 26px; font-weight: 900; letter-spacing: -0.5px; }
-    .protocol { text-align: center; font-size: 10px; color: #6B7280; margin-bottom: 6px; letter-spacing: 1px; }
-    .hash { font-family: 'Courier New', monospace; font-size: 8px; color: #4B5563; text-align: center; margin: 6px 0 16px; word-break: break-all; }
-    .lang-scroller { display: flex; overflow-x: auto; gap: 6px; padding: 8px 0; margin: 12px 0; scrollbar-width: none; }
-    .lang-scroller::-webkit-scrollbar { display: none; }
-    .lang-chip { padding: 6px 10px; background: #1F1F3A; border: 1px solid #374151; border-radius: 20px; font-size: 11px; cursor: pointer; white-space: nowrap; flex-shrink: 0; }
-    .lang-chip.active { background: var(--p); border-color: var(--p); font-weight: 700; }
-    .io-grid { display: grid; grid-template-columns: 1fr; gap: 8px; background: #1F1F3A; border-radius: 16px; padding: 4px; margin: 16px 0; }
-    .io-btn { padding: 12px; text-align: center; border-radius: 12px; cursor: pointer; font-weight: 700; font-size: 13px; transition: 0.2s; }
-    .io-btn.active { background: var(--p); }
-    .voice-realm { width: 130px; height: 130px; border-radius: 50%; background: radial-gradient(circle at 30% 30%,#A78BFA,#7C3AED,#4C1D95); margin: 24px auto; display: flex; align-items: center; justify-content: center; cursor: pointer; position: relative; }
-    .voice-realm::before,.voice-realm::after { content: ''; position: absolute; inset: -6px; border-radius: 50%; background: conic-gradient(from 0deg,var(--p),var(--s),var(--p)); animation: spin 4s linear infinite; z-index: -1; }
-    .voice-realm::after { inset: -12px; opacity: 0.3; filter: blur(10px); }
-    .voice-realm.recording::before { animation: pulse 1s infinite; }
+ .genesis { background: linear-gradient(145deg,#13132B,#0F0F23); border: 1px solid var(--p); border-radius: 28px; padding: 20px; max-width: 540px; margin: 0 auto; box-shadow: 0 0 60px rgba(124,58,237,0.25), inset 0 1px 0 rgba(255,255,255,0.05); }
+      .logo-wrap { display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 8px; }
+      .logo-svg { width: 48px; height: 48px; flex-shrink: 0; }
+        h1 { background: linear-gradient(90deg,#A78BFA,#EC4899); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-align: center; font-size: 26px; font-weight: 900; letter-spacing: -0.5px; margin: 0; }
+  .protocol { text-align: center; font-size: 10px; color: #6B7280; margin-bottom: 6px; letter-spacing: 1px; }
+  .hash { font-family: 'Courier New', monospace; font-size: 8px; color: #4B5563; text-align: center; margin: 6px 0 16px; word-break: break-all; }
+  .user-bar { display: flex; justify-content: space-between; align-items: center; background: #1F1F3A; border: 1px solid #374151; border-radius: 16px; padding: 12px; margin-bottom: 16px; }
+  .user-bar button { width: auto; padding: 8px 16px; font-size: 13px; margin: 0; }
+  .lang-scroller { display: flex; overflow-x: auto; gap: 6px; padding: 8px 0; margin: 12px 0; scrollbar-width: none; }
+  .lang-scroller::-webkit-scrollbar { display: none; }
+  .lang-chip { padding: 6px 10px; background: #1F1F3A; border: 1px solid #374151; border-radius: 20px; font-size: 11px; cursor: pointer; white-space: nowrap; flex-shrink: 0; }
+  .lang-chip.active { background: var(--p); border-color: var(--p); font-weight: 700; }
+  .io-grid { display: grid; grid-template-columns: 1fr; gap: 8px; background: #1F1F3A; border-radius: 16px; padding: 4px; margin: 16px 0; }
+  .io-btn { padding: 12px; text-align: center; border-radius: 12px; cursor: pointer; font-weight: 700; font-size: 13px; transition: 0.2s; }
+  .io-btn.active { background: var(--p); }
+  .voice-realm { width: 130px; height: 130px; border-radius: 50%; background: radial-gradient(circle at 30% 30%,#A78BFA,#7C3AED,#4C1D95); margin: 24px auto; display: flex; align-items: center; justify-content: center; cursor: pointer; position: relative; }
+  .voice-realm::before,.voice-realm::after { content: ''; position: absolute; inset: -6px; border-radius: 50%; background: conic-gradient(from 0deg,var(--p),var(--s),var(--p)); animation: spin 4s linear infinite; z-index: -1; }
+  .voice-realm::after { inset: -12px; opacity: 0.3; filter: blur(10px); }
+  .voice-realm.recording::before { animation: pulse 1s infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
         @keyframes pulse { 0%,100%{transform:scale(1);opacity:1} 50%{transform:scale(1.15);opacity:0.6} }
-        textarea, input, button { width: 100%; padding: 16px; border-radius: 16px; border: 1px solid #374151; background: #0F0F23; color: var(--txt); margin: 8px 0; font-size: 15px; font-family: inherit; }
-        textarea { resize: vertical; min-height: 120px; }
+        textarea, input, select, button { width: 100%; padding: 16px; border-radius: 16px; border: 1px solid #374151; background: #0F0F23; color: var(--txt); margin: 8px 0; font-size: 15px; font-family: inherit; }
+        select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%23A78BFA' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1.753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: left 16px center; padding-left: 40px; }
+        textarea { resize: vertical; min-height: 100px; }
         button { background: linear-gradient(90deg,var(--p),var(--s)); border: none; font-weight: 800; cursor: pointer; transition: 0.2s; }
         button:active { transform: scale(0.98); }
         button:disabled { opacity: 0.4; cursor: not-allowed; }
-    .quantum-link { background: #0F0F23; border: 1px dashed var(--p); padding: 14px; border-radius: 16px; font-family: monospace; font-size: 9px; margin: 16px 0; display: none; word-break: break-all; }
-    .tribunal { background: #0F0F23; border: 1px solid #374151; border-radius: 20px; padding: 16px; margin: 16px 0; font-size: 12px; display: none; }
-    .judge { display: flex; justify-content: space-between; align-items: center; margin: 10px 0; padding: 10px; background: #1F1F3A; border-radius: 12px; }
-    .verdict { font-weight: 800; }
-    .verdict.approve { color: var(--ok); }
-    .verdict.reject { color: var(--err); }
-    .status { padding: 14px; border-radius: 16px; text-align: center; margin-top: 16px; font-size: 13px; font-weight: 700; display: none; }
-    .status.ok { background: rgba(16,185,129,0.15); color: var(--ok); border: 1px solid var(--ok); display: block; }
-    .status.err { background: rgba(239,68,0.15); color: var(--err); border: 1px solid var(--err); display: block; }
-    .status.ai { background: rgba(124,58,237,0.15); color: #A78BFA; border: 1px solid var(--p); display: block; }
-    .hidden { display: none!important; }
-    .contract-card { background: #0F0F23; border: 1px solid #374151; border-radius: 16px; padding: 16px; margin: 16px 0; font-size: 13px; line-height: 1.7; }
-    .contract-card b { color: #A78BFA; }
+  .quantum-link { background: #0F0F23; border: 1px dashed var(--p); padding: 14px; border-radius: 16px; font-family: monospace; font-size: 9px; margin: 16px 0; display: none; word-break: break-all; }
+  .tribunal { background: #0F0F23; border: 1px solid #374151; border-radius: 20px; padding: 16px; margin: 16px 0; font-size: 12px; display: none; }
+  .judge { display: flex; justify-content: space-between; align-items: center; margin: 10px 0; padding: 10px; background: #1F1F3A; border-radius: 12px; }
+  .verdict { font-weight: 800; }
+  .verdict.approve { color: var(--ok); }
+  .verdict.reject { color: var(--err); }
+  .status { padding: 14px; border-radius: 16px; text-align: center; margin-top: 16px; font-size: 13px; font-weight: 700; display: none; }
+  .status.ok { background: rgba(16,185,129,0.15); color: var(--ok); border: 1px solid var(--ok); display: block; }
+  .status.err { background: rgba(239,68,68,0.15); color: var(--err); border: 1px solid var(--err); display: block; }
+  .status.ai { background: rgba(124,58,237,0.15); color: #A78BFA; border: 1px solid var(--p); display: block; }
+  .hidden { display: none!important; }
+  .contract-card { background: #0F0F23; border: 1px solid #374151; border-radius: 16px; padding: 16px; margin: 16px 0; font-size: 13px; line-height: 1.7; }
+  .contract-card b { color: #A78BFA; }
+  .label { font-size: 12px; color: #9CA3AF; margin: 12px 4px 4px; font-weight: 700; }
+  .pi-input { position: relative; }
+  .pi-input span { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: #A78BFA; font-weight: 900; font-size: 18px; pointer-events: none; }
+  .pi-input input { padding-left: 50px; }
+  .fee-box { background: #1F1F3A; border: 1px solid #374151; border-radius: 12px; padding: 12px; margin: 12px 0; font-size: 11px; color: #9CA3AF; }
+  .fee-box b { color: #A78BFA; }
     </style>
 </head>
 <body>
     <div class="genesis">
-        <div class="protocol">GENESIS PROTOCOL V8.0 | QUANTUM IMMUTABLE</div>
-        <h1>CORTEX ESCROW</h1>
+        <div class="protocol">GENESIS PROTOCOL V9.0 | AUDITED FINAL</div>
+        <div class="logo-wrap">
+            <svg class="logo-svg" viewBox="0 0 64 64" fill="none">
+                <defs><linearGradient id="diamondGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#A78BFA"/><stop offset="100%" stop-color="#EC4899"/></linearGradient></defs>
+                <path d="M32 4L12 24L32 60L52 24L32 4Z" fill="url(#diamondGrad)" opacity="0.9"/>
+                <path d="M32 4L22 24L32 44L42 24L32 4Z" fill="white" opacity="0.3"/>
+                <circle cx="32" cy="24" r="3" fill="white"/><circle cx="22" cy="24" r="2" fill="white" opacity="0.6"/><circle cx="42" cy="24" r="2" fill="white" opacity="0.6"/><circle cx="32" cy="44" r="2" fill="white" opacity="0.6"/>
+                <line x1="32" y1="24" x2="22" y2="24" stroke="white" stroke-width="1" opacity="0.5"/><line x1="32" y1="24" x2="42" y2="24" stroke="white" stroke-width="1" opacity="0.5"/><line x1="32" y1="24" x2="32" y2="44" stroke="white" stroke-width="1" opacity="0.5"/>
+            </svg>
+            <h1>CORTEX ESCROW</h1>
+        </div>
         <p class="hash" id="contractHash">ContractID: 0xGENESIS...</p>
-        <p id="welcome" style="text-align:center;font-weight:700;min-height:24px;color:#A78BFA"></p>
+
+        <div class="user-bar">
+            <span id="welcome" style="font-weight:700;color:#A78BFA">وضع الضيف</span>
+            <button id="loginBtn">Login with Pi</button>
+        </div>
 
         <div id="sellerUI">
+            <div class="label">اللغة</div>
             <div class="lang-scroller" id="langScroller"></div>
+
+            <div class="label">نوع الصفقة</div>
+            <select id="dealType">
+                <option value="digital">منتج رقمي - حساب، كود، ملف</option>
+                <option value="service">خدمة - تصميم، برمجة، استشارة</option>
+                <option value="physical">منتج ملموس - شحن مطلوب</option>
+                <option value="other">أخرى</option>
+            </select>
+
+            <div class="label">السعر المطلوب</div>
+            <div class="pi-input">
+                <input type="text" id="textInputPrice" inputmode="decimal" placeholder="0.0000001" pattern="^\d+(\.\d{1,7})?$">
+                <span>π</span>
+            </div>
+
+            <div class="fee-box">
+                <b>العمولة:</b> 1% من البائع + 1% من المشتري<br>
+                <span id="feeCalc">أدخل السعر لحساب العمولة</span>
+            </div>
+
             <div class="io-grid">
                 <div class="io-btn active" data-mode="voice">🎤 Voice AI</div>
                 <div class="io-btn" data-mode="text">✍️ Text AI</div>
@@ -69,37 +114,53 @@
             </div>
 
             <div id="textMode" class="hidden">
-                <textarea id="textInput" rows="5" placeholder="Speak or type in any language:&#10;Example: I have 3 tons of premium Yemeni coffee beans, asking 5 Pi, delivery within 7 days to buyer location"></textarea>
-                <button id="deployBtn">Deploy Immutable Smart Contract</button>
+                <div class="label">تفاصيل الصفقة</div>
+                <textarea id="textInput" rows="4" placeholder="مثال: حساب نتفلكس بريميوم سنة كاملة، التسليم فوري بعد الدفع"></textarea>
+                <button id="deployBtn">إنشاء رابط الصفقة فوراً</button>
             </div>
 
             <div class="quantum-link" id="quantumLink"></div>
-            <button id="copyBtn" class="hidden">Copy Quantum Contract Link</button>
+            <button id="copyBtn" class="hidden">نسخ رابط الصفقة</button>
             <div class="tribunal" id="sellerTribunal"></div>
         </div>
 
         <div id="buyerUI" class="hidden">
-            <h3 style="color:#A78BFA;margin-bottom:12px">Quantum Escrow Contract</h3>
+            <h3 style="color:#A78BFA;margin-bottom:12px">عقد ضمان كمي</h3>
             <div class="contract-card" id="contractView"></div>
 
-            <input type="number" id="counterOffer" step="0.0000001" min="0.0000001" placeholder="Your counter-offer in Pi">
-            <button id="tribunalBtn">⚖️ Invoke AI Tribunal Consensus</button>
+            <div class="label">عرضك المضاد</div>
+            <div class="pi-input">
+                <input type="text" id="counterOffer" inputmode="decimal" placeholder="0.0000000" pattern="^\d+(\.\d{1,7})?$">
+                <span>π</span>
+            </div>
+            <div class="fee-box" id="buyerFeeBox">
+                <b>المبلغ النهائي:</b> <span id="buyerTotal">0.0000000 π</span> شامل العمولة 1%
+            </div>
+            <button id="tribunalBtn">⚖️ تفعيل محكمة الذكاء الاصطناعي</button>
 
             <div class="tribunal" id="buyerTribunal"></div>
-            <button id="depositBtn" class="hidden">🔐 Deposit Pi to Quantum Vault</button>
-            <button id="releaseBtn" class="hidden">✅ Confirm Delivery & Execute Release</button>
+            <button id="depositBtn" class="hidden">🔐 إيداع Pi في الخزنة الكمية</button>
+            <button id="releaseBtn" class="hidden">✅ تأكيد الاستلام وتحويل Pi للبائع</button>
         </div>
 
         <div class="status" id="status"></div>
-        <button id="authBtn">Connect Pi Wallet + Passkey</button>
     </div>
 
-<script nonce="G8">
+<script nonce="CORTEX90">
 'use strict';
 Pi.init({ version: "2.0", sandbox: false });
 const GENESIS_API = 'https://pi-backend-kv9g.onrender.com';
 const AI_TRIBUNAL = ['GPT-5-Turbo', 'Claude-Opus-4', 'Gemini-Ultra-2.0'];
+const PLATFORM_FEE_SELLER = 0.01;
+const PLATFORM_FEE_BUYER = 0.01;
 let currentUser = null, activeContract = null, currentLang = 'ar-SA';
+
+const DEAL_TYPES = {
+    digital: { name: 'منتج رقمي', delivery: 'تسليم فوري عبر الرابط/الكود', dispute: '7 أيام ضمان استرجاع' },
+    service: { name: 'خدمة', delivery: 'حسب الاتفاق - مراحل', dispute: 'محكمة AI تحكم بالإنجاز' },
+    physical: { name: 'منتج ملموس', delivery: 'شحن + رقم تتبع', dispute: 'إثبات استلام مطلوب' },
+    other: { name: 'أخرى', delivery: 'حسب الشروط', dispute: 'حكم محكمة AI' }
+};
 
 const LANGS = {'ar-SA':'🇸🇦 عربي','en-US':'🇺🇸 EN','zh-CN':'🇨🇳 中文','hi-IN':'🇮🇳 हिंदी','es-ES':'🇪🇸 ES','fr-FR':'🇫🇷 FR','pt-BR':'🇧🇷 PT','ru-RU':'🇷🇺 RU','ja-JP':'🇯🇵 日本語','de-DE':'🇩🇪 DE','tr-TR':'🇹🇷 TR','ko-KR':'🇰🇷 한국어'};
 
@@ -134,7 +195,44 @@ function showStatus(msg, type='ai') {
     el.textContent = msg; el.className = `status ${type}`;
 }
 
-document.getElementById('authBtn').addEventListener('click', quantumAuth);
+function parsePiAmount(str) {
+    if (!/^\d+(\.\d{1,7})?$/.test(str)) return null;
+    const num = parseFloat(str);
+    if (isNaN(num) || num < 0.0000001 || num > 100000) return null;
+    return Math.round(num * 10000000) / 10000000;
+}
+
+function formatPiAmount(num) {
+    return Number(num).toFixed(7);
+}
+
+function calculateFees(price) {
+    const sellerFee = Math.round(price * PLATFORM_FEE_SELLER * 10000000) / 10000000;
+    const buyerFee = Math.round(price * PLATFORM_FEE_BUYER * 10000000) / 10000000;
+    const sellerReceives = Math.round((price - sellerFee) * 10000000) / 10000000;
+    const buyerPays = Math.round((price + buyerFee) * 10000000) / 10000000;
+    return { price, sellerFee, buyerFee, sellerReceives, buyerPays };
+}
+
+document.getElementById('textInputPrice').addEventListener('input', (e) => {
+    const price = parsePiAmount(e.target.value);
+    if (price) {
+        const f = calculateFees(price);
+        document.getElementById('feeCalc').textContent = `البائع يستلم ${formatPiAmount(f.sellerReceives)} π | المشتري يدفع ${formatPiAmount(f.buyerPays)} π`;
+    } else {
+        document.getElementById('feeCalc').textContent = 'أدخل السعر لحساب العمولة';
+    }
+});
+
+document.getElementById('counterOffer').addEventListener('input', (e) => {
+    const price = parsePiAmount(e.target.value);
+    if (price) {
+        const f = calculateFees(price);
+        document.getElementById('buyerTotal').textContent = `${formatPiAmount(f.buyerPays)} π`;
+    }
+});
+
+document.getElementById('loginBtn').addEventListener('click', piLogin);
 document.getElementById('voiceRealm').addEventListener('click', invokeVoiceAI);
 document.getElementById('deployBtn').addEventListener('click', () => deployGenesisContract());
 document.getElementById('copyBtn').addEventListener('click', copyQuantumLink);
@@ -142,16 +240,20 @@ document.getElementById('tribunalBtn').addEventListener('click', invokeAITribuna
 document.getElementById('depositBtn').addEventListener('click', depositToQuantumVault);
 document.getElementById('releaseBtn').addEventListener('click', executeRelease);
 
-async function quantumAuth() {
+async function piLogin() {
     try {
-        showStatus('Connecting to Pi...', 'ai');
-        const auth = await Pi.authenticate(['username','payments','wallet_address'], onIncompletePayment);
+        showStatus('جاري تسجيل الدخول...', 'ai');
+        const scopes = ['username', 'payments', 'wallet_address'];
+        const auth = await Pi.authenticate(scopes, onIncompletePayment);
         currentUser = auth.user;
-        document.getElementById('welcome').textContent = `Quantum Channel: @${auth.user.username}`;
-        document.getElementById('authBtn').classList.add('hidden');
-        checkContractURL();
-        showStatus('Connected Successfully', 'ok');
-    } catch(e) { showStatus(`Quantum Auth Failed: ${e.message}`, 'err'); }
+        if (!currentUser?.wallet_address) throw new Error('عنوان المحفظة غير متوفر. تأكد من تفعيل المحفظة في Pi Browser');
+        document.getElementById('welcome').textContent = `@${auth.user.username}`;
+        document.getElementById('loginBtn').textContent = 'تم الربط';
+        document.getElementById('loginBtn').disabled = true;
+        showStatus(`مرحباً @${auth.user.username}`, 'ok');
+    } catch(e) {
+        showStatus(`فشل تسجيل الدخول: ${e.message}`, 'err');
+    }
 }
 
 function invokeVoiceAI() {
@@ -164,22 +266,40 @@ function invokeVoiceAI() {
         deployGenesisContract(text);
     };
     rec.onend = () => document.getElementById('voiceRealm').classList.remove('recording');
-    rec.onerror = e => showStatus(`Voice Error: ${e.error}`, 'err');
+    rec.onerror = e => showStatus(`خطأ صوتي: ${e.error}`, 'err');
     rec.start();
 }
 
 async function deployGenesisContract(text=null) {
     text = text || document.getElementById('textInput').value.trim();
-    if (!text) return showStatus('Input required for Genesis', 'err');
-    if (!currentUser) return showStatus('Connect Wallet First', 'err');
-    showStatus('AI Tribunal Analyzing... 3 Agents Voting...', 'ai');
+    const price = parsePiAmount(document.getElementById('textInputPrice').value);
+
+    if (!text) return showStatus('اكتب تفاصيل الصفقة أولاً', 'err');
+    if (price === null) return showStatus('السعر غير صحيح. أقل سعر: 0.0000001 π', 'err');
+
+    const dealType = document.getElementById('dealType').value;
+    showStatus(`محكمة الذكاء الاصطناعي تحلل صفقة ${DEAL_TYPES[dealType].name}...`, 'ai');
+
+    const sellerWallet = currentUser?.wallet_address || null;
+    if (currentUser &&!sellerWallet) return showStatus('خطأ: عنوان المحفظة غير متوفر. سجل دخول مرة أخرى', 'err');
+
+    const fees = calculateFees(price);
 
     const res = await fetch(`${GENESIS_API}/genesis/deploy`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text, lang: currentLang, seller: currentUser.uid, agents: AI_TRIBUNAL })
+        body: JSON.stringify({
+            text, price, currency: 'Pi',
+            fees,
+            lang: currentLang,
+            dealType, dealTypeName: DEAL_TYPES[dealType].name,
+            seller: currentUser?.uid || null,
+            sellerName: currentUser?.username || 'Anonymous Seller',
+            sellerWallet,
+            agents: AI_TRIBUNAL
+        })
     });
     const data = await res.json();
-    if (!data.success) return showStatus(`Tribunal Rejected: ${data.reason}`, 'err');
+    if (!data.success) return showStatus(`المحكمة رفضت: ${data.reason}`, 'err');
 
     activeContract = data.contract;
     document.getElementById('contractHash').textContent = `ContractID: ${data.contract.hash}`;
@@ -190,109 +310,6 @@ async function deployGenesisContract(text=null) {
 
     const tribunal = document.getElementById('sellerTribunal');
     tribunal.style.display = 'block';
-    tribunal.innerHTML = `<b>UNANIMOUS VERDICT: APPROVED</b>` + data.votes.map(v =>
+    tribunal.innerHTML = `<b>حكم بالإجماع: موافق - ${DEAL_TYPES[dealType].name}</b>` + data.votes.map(v =>
         `<div class="judge"><span>${v.agent}</span><span class="verdict approve">✓ ${v.confidence}%</span></div>`
-    ).join('');
-
-    showStatus('✅ Immutable Smart Contract Anchored on IPFS + Polygon', 'ok');
-}
-
-function copyQuantumLink() {
-    navigator.clipboard.writeText(document.getElementById('quantumLink').textContent);
-    showStatus('Quantum Link Copied - Immutable', 'ok');
-}
-
-function checkContractURL() {
-    const gid = new URLSearchParams(window.location.search).get('g');
-    if (gid) loadContractForBuyer(gid);
-}
-
-async function loadContractForBuyer(gid) {
-    document.getElementById('sellerUI').classList.add('hidden');
-    document.getElementById('buyerUI').classList.remove('hidden');
-
-    const res = await fetch(`${GENESIS_API}/genesis/contract/${gid}`);
-    activeContract = await res.json();
-
-    document.getElementById('contractView').innerHTML = `
-        <b>Asset:</b> ${activeContract.item}<br>
-        <b>Ask:</b> ${activeContract.price} Pi<br>
-        <b>Seller:</b> @${activeContract.sellerName}<br>
-        <b>Terms:</b> ${activeContract.terms}<br>
-        <b>SHA3-512:</b> ${activeContract.hash.substring(0,48)}...<br>
-        <b>IPFS:</b> ${activeContract.ipfs}<br>
-        <b>AI Verified:</b> ${activeContract.aiConsensus}/3 Agents
-    `;
-    document.getElementById('counterOffer').value = activeContract.price;
-    document.getElementById('contractHash').textContent = `ContractID: ${activeContract.hash}`;
-}
-
-async function invokeAITribunal() {
-    const offer = parseFloat(document.getElementById('counterOffer').value);
-    if (!offer) return showStatus('Enter counter-offer', 'err');
-    const tribunal = document.getElementById('buyerTribunal');
-    tribunal.style.display = 'block';
-    tribunal.innerHTML = 'AI Tribunal in Deliberation...';
-
-    const res = await fetch(`${GENESIS_API}/genesis/negotiate`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ contractId: activeContract.id, offer, buyer: currentUser.uid })
-    });
-    const verdict = await res.json();
-
-    tribunal.innerHTML = `<b>BINDING VERDICT: ${verdict.decision}</b>` + verdict.judges.map(j =>
-        `<div class="judge"><span>${j.agent}</span><span class="verdict ${j.approve?'approve':'reject'}">${j.approve?'✓':'✗'} ${j.price} Pi</span></div>`
-    ).join('') + `<div style="margin-top:12px;color:var(--ok);font-weight:800">Final Price: ${verdict.finalPrice} Pi</div>`;
-
-    activeContract.finalPrice = verdict.finalPrice;
-    document.getElementById('depositBtn').classList.remove('hidden');
-    showStatus('AI Tribunal Reached Unanimous Consensus', 'ok');
-}
-
-async function depositToQuantumVault() {
-    try {
-        await Pi.createPayment({
-            amount: activeContract.finalPrice,
-            memo: `Genesis:${activeContract.id}`,
-            metadata: { hash: activeContract.hash, type: 'quantum_vault' }
-        }, {
-            onReadyForServerApproval: async (pid) => {
-                await fetch(`${GENESIS_API}/genesis/approve`, {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ paymentId: pid, contractId: activeContract.id })
-                });
-            },
-            onReadyForServerCompletion: async (pid, txid) => {
-                await fetch(`${GENESIS_API}/genesis/complete`, {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ paymentId: pid, txid, contractId: activeContract.id })
-                });
-                showStatus('✅ Pi Locked in Quantum Vault - Awaiting Delivery', 'ok');
-                document.getElementById('depositBtn').classList.add('hidden');
-                document.getElementById('releaseBtn').classList.remove('hidden');
-            },
-            onError: e => showStatus(e.message, 'err')
-        });
-    } catch(e) { showStatus(e.message, 'err'); }
-}
-
-async function executeRelease() {
-    await fetch(`${GENESIS_API}/genesis/execute`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ contractId: activeContract.id, buyer: currentUser.uid })
-    });
-    showStatus('✅ Smart Contract Executed: Pi Transferred to Seller', 'ok');
-    document.getElementById('releaseBtn').classList.add('hidden');
-}
-
-async function onIncompletePayment(p) {
-    await fetch(`${GENESIS_API}/genesis/complete`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ paymentId: p.identifier, txid: p.transaction?.txid })
-    });
-}
-
-checkContractURL();
-</script>
-</body>
-</html>
+    ).join('') + `<div style="margin-top:12px;font-size:11px
