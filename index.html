@@ -5,26 +5,26 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Cortex Escrow - Genesis V8</title>
     <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'nonce-G8' https://sdk.minepi.com; style-src 'self' 'unsafe-inline'; connect-src 'self' https://pi-backend-kv9g.onrender.com https://api.minepi.com https://ipfs.io https://polygon-rpc.com; media-src 'self' blob:; img-src 'self' data: https://*; font-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests;">
-    <script src="https://sdk.minepi.com/pi-sdk.js" integrity="sha384-..." crossorigin="anonymous" nonce="G8"></script>
+    <script src="https://sdk.minepi.com/pi-sdk.js" crossorigin="anonymous" nonce="G8"></script>
     <style>
         :root { --p:#7C3AED; --s:#EC4899; --bg:#0A0A15; --card:#13132B; --txt:#E5E7EB; --ok:#10B981; --err:#EF4444; }
         * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--txt); min-height: 100vh; padding: 12px; }
-     .genesis { background: linear-gradient(145deg,#13132B,#0F0F23); border: 1px solid var(--p); border-radius: 28px; padding: 20px; max-width: 540px; margin: 0 auto; box-shadow: 0 0 60px rgba(124,58,237,0.25), inset 0 1px 0 rgba(255,255,255,0.05); }
+    .genesis { background: linear-gradient(145deg,#13132B,#0F0F23); border: 1px solid var(--p); border-radius: 28px; padding: 20px; max-width: 540px; margin: 0 auto; box-shadow: 0 0 60px rgba(124,58,237,0.25), inset 0 1px 0 rgba(255,255,255,0.05); }
         h1 { background: linear-gradient(90deg,#A78BFA,#EC4899); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-align: center; font-size: 26px; font-weight: 900; letter-spacing: -0.5px; }
-     .protocol { text-align: center; font-size: 10px; color: #6B7280; margin-bottom: 6px; letter-spacing: 1px; }
-     .hash { font-family: 'Courier New', monospace; font-size: 8px; color: #4B5563; text-align: center; margin: 6px 0 16px; word-break: break-all; }
-     .lang-scroller { display: flex; overflow-x: auto; gap: 6px; padding: 8px 0; margin: 12px 0; scrollbar-width: none; }
-     .lang-scroller::-webkit-scrollbar { display: none; }
-     .lang-chip { padding: 6px 10px; background: #1F1F3A; border: 1px solid #374151; border-radius: 20px; font-size: 11px; cursor: pointer; white-space: nowrap; flex-shrink: 0; }
-     .lang-chip.active { background: var(--p); border-color: var(--p); font-weight: 700; }
-     .io-grid { display: grid; grid-template-columns: 1fr; gap: 8px; background: #1F1F3A; border-radius: 16px; padding: 4px; margin: 16px 0; }
-     .io-btn { padding: 12px; text-align: center; border-radius: 12px; cursor: pointer; font-weight: 700; font-size: 13px; transition: 0.2s; }
-     .io-btn.active { background: var(--p); }
-     .voice-realm { width: 130px; height: 130px; border-radius: 50%; background: radial-gradient(circle at 30% 30%,#A78BFA,#7C3AED,#4C1D95); margin: 24px auto; display: flex; align-items: center; justify-content: center; cursor: pointer; position: relative; }
-     .voice-realm::before,.voice-realm::after { content: ''; position: absolute; inset: -6px; border-radius: 50%; background: conic-gradient(from 0deg,var(--p),var(--s),var(--p)); animation: spin 4s linear infinite; z-index: -1; }
-     .voice-realm::after { inset: -12px; opacity: 0.3; filter: blur(10px); }
-     .voice-realm.recording::before { animation: pulse 1s infinite; }
+    .protocol { text-align: center; font-size: 10px; color: #6B7280; margin-bottom: 6px; letter-spacing: 1px; }
+    .hash { font-family: 'Courier New', monospace; font-size: 8px; color: #4B5563; text-align: center; margin: 6px 0 16px; word-break: break-all; }
+    .lang-scroller { display: flex; overflow-x: auto; gap: 6px; padding: 8px 0; margin: 12px 0; scrollbar-width: none; }
+    .lang-scroller::-webkit-scrollbar { display: none; }
+    .lang-chip { padding: 6px 10px; background: #1F1F3A; border: 1px solid #374151; border-radius: 20px; font-size: 11px; cursor: pointer; white-space: nowrap; flex-shrink: 0; }
+    .lang-chip.active { background: var(--p); border-color: var(--p); font-weight: 700; }
+    .io-grid { display: grid; grid-template-columns: 1fr; gap: 8px; background: #1F1F3A; border-radius: 16px; padding: 4px; margin: 16px 0; }
+    .io-btn { padding: 12px; text-align: center; border-radius: 12px; cursor: pointer; font-weight: 700; font-size: 13px; transition: 0.2s; }
+    .io-btn.active { background: var(--p); }
+    .voice-realm { width: 130px; height: 130px; border-radius: 50%; background: radial-gradient(circle at 30% 30%,#A78BFA,#7C3AED,#4C1D95); margin: 24px auto; display: flex; align-items: center; justify-content: center; cursor: pointer; position: relative; }
+    .voice-realm::before,.voice-realm::after { content: ''; position: absolute; inset: -6px; border-radius: 50%; background: conic-gradient(from 0deg,var(--p),var(--s),var(--p)); animation: spin 4s linear infinite; z-index: -1; }
+    .voice-realm::after { inset: -12px; opacity: 0.3; filter: blur(10px); }
+    .voice-realm.recording::before { animation: pulse 1s infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
         @keyframes pulse { 0%,100%{transform:scale(1);opacity:1} 50%{transform:scale(1.15);opacity:0.6} }
         textarea, input, button { width: 100%; padding: 16px; border-radius: 16px; border: 1px solid #374151; background: #0F0F23; color: var(--txt); margin: 8px 0; font-size: 15px; font-family: inherit; }
@@ -32,19 +32,19 @@
         button { background: linear-gradient(90deg,var(--p),var(--s)); border: none; font-weight: 800; cursor: pointer; transition: 0.2s; }
         button:active { transform: scale(0.98); }
         button:disabled { opacity: 0.4; cursor: not-allowed; }
-     .quantum-link { background: #0F0F23; border: 1px dashed var(--p); padding: 14px; border-radius: 16px; font-family: monospace; font-size: 9px; margin: 16px 0; display: none; word-break: break-all; }
-     .tribunal { background: #0F0F23; border: 1px solid #374151; border-radius: 20px; padding: 16px; margin: 16px 0; font-size: 12px; display: none; }
-     .judge { display: flex; justify-content: space-between; align-items: center; margin: 10px 0; padding: 10px; background: #1F1F3A; border-radius: 12px; }
-     .verdict { font-weight: 800; }
-     .verdict.approve { color: var(--ok); }
-     .verdict.reject { color: var(--err); }
-     .status { padding: 14px; border-radius: 16px; text-align: center; margin-top: 16px; font-size: 13px; font-weight: 700; display: none; }
-     .status.ok { background: rgba(16,185,129,0.15); color: var(--ok); border: 1px solid var(--ok); display: block; }
-     .status.err { background: rgba(239,68,0.15); color: var(--err); border: 1px solid var(--err); display: block; }
-     .status.ai { background: rgba(124,58,237,0.15); color: #A78BFA; border: 1px solid var(--p); display: block; }
-     .hidden { display: none!important; }
-     .contract-card { background: #0F0F23; border: 1px solid #374151; border-radius: 16px; padding: 16px; margin: 16px 0; font-size: 13px; line-height: 1.7; }
-     .contract-card b { color: #A78BFA; }
+    .quantum-link { background: #0F0F23; border: 1px dashed var(--p); padding: 14px; border-radius: 16px; font-family: monospace; font-size: 9px; margin: 16px 0; display: none; word-break: break-all; }
+    .tribunal { background: #0F0F23; border: 1px solid #374151; border-radius: 20px; padding: 16px; margin: 16px 0; font-size: 12px; display: none; }
+    .judge { display: flex; justify-content: space-between; align-items: center; margin: 10px 0; padding: 10px; background: #1F1F3A; border-radius: 12px; }
+    .verdict { font-weight: 800; }
+    .verdict.approve { color: var(--ok); }
+    .verdict.reject { color: var(--err); }
+    .status { padding: 14px; border-radius: 16px; text-align: center; margin-top: 16px; font-size: 13px; font-weight: 700; display: none; }
+    .status.ok { background: rgba(16,185,129,0.15); color: var(--ok); border: 1px solid var(--ok); display: block; }
+    .status.err { background: rgba(239,68,0.15); color: var(--err); border: 1px solid var(--err); display: block; }
+    .status.ai { background: rgba(124,58,237,0.15); color: #A78BFA; border: 1px solid var(--p); display: block; }
+    .hidden { display: none!important; }
+    .contract-card { background: #0F0F23; border: 1px solid #374151; border-radius: 16px; padding: 16px; margin: 16px 0; font-size: 13px; line-height: 1.7; }
+    .contract-card b { color: #A78BFA; }
     </style>
 </head>
 <body>
@@ -57,12 +57,12 @@
         <div id="sellerUI">
             <div class="lang-scroller" id="langScroller"></div>
             <div class="io-grid">
-                <div class="io-btn active" onclick="setIO('voice')">🎤 Voice AI</div>
-                <div class="io-btn" onclick="setIO('text')">✍️ Text AI</div>
+                <div class="io-btn active" data-mode="voice">🎤 Voice AI</div>
+                <div class="io-btn" data-mode="text">✍️ Text AI</div>
             </div>
 
             <div id="voiceMode">
-                <div class="voice-realm" id="voiceRealm" onclick="invokeVoiceAI()">
+                <div class="voice-realm" id="voiceRealm">
                     <svg width="44" height="44" viewBox="0 0 24 24" fill="white"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.91-3c-.49 0-.9.36-.98.85C16.52 14.2 14.44 16 12 16s-4.52-1.8-4.93-4.15c-.08-.49-.85-.98-.85-.61 0-1.09.54-1 1.14.49 3 2.89 5.35 5.91 5.78V20c0.55.45 1 1 1s1-.45 1-1v-2.08c3.02-.43 5.42-2.78 5.91-5.78.1-.6-.39-1.14-1-1.14z"/></svg>
                 </div>
                 <p id="voiceTranscript" style="text-align:center;min-height:60px;font-size:14px;color:#D1D5DB"></p>
@@ -70,11 +70,11 @@
 
             <div id="textMode" class="hidden">
                 <textarea id="textInput" rows="5" placeholder="Speak or type in any language:&#10;Example: I have 3 tons of premium Yemeni coffee beans, asking 5 Pi, delivery within 7 days to buyer location"></textarea>
-                <button onclick="deployGenesisContract()">Deploy Immutable Smart Contract</button>
+                <button id="deployBtn">Deploy Immutable Smart Contract</button>
             </div>
 
             <div class="quantum-link" id="quantumLink"></div>
-            <button id="copyBtn" class="hidden" onclick="copyQuantumLink()">Copy Quantum Contract Link</button>
+            <button id="copyBtn" class="hidden">Copy Quantum Contract Link</button>
             <div class="tribunal" id="sellerTribunal"></div>
         </div>
 
@@ -83,15 +83,15 @@
             <div class="contract-card" id="contractView"></div>
 
             <input type="number" id="counterOffer" step="0.0000001" min="0.0000001" placeholder="Your counter-offer in Pi">
-            <button onclick="invokeAITribunal()">⚖️ Invoke AI Tribunal Consensus</button>
+            <button id="tribunalBtn">⚖️ Invoke AI Tribunal Consensus</button>
 
             <div class="tribunal" id="buyerTribunal"></div>
-            <button id="depositBtn" class="hidden" onclick="depositToQuantumVault()">🔐 Deposit Pi to Quantum Vault</button>
-            <button id="releaseBtn" class="hidden" onclick="executeRelease()">✅ Confirm Delivery & Execute Release</button>
+            <button id="depositBtn" class="hidden">🔐 Deposit Pi to Quantum Vault</button>
+            <button id="releaseBtn" class="hidden">✅ Confirm Delivery & Execute Release</button>
         </div>
 
         <div class="status" id="status"></div>
-        <button id="authBtn" onclick="quantumAuth()">Connect Pi Wallet + Passkey</button>
+        <button id="authBtn">Connect Pi Wallet + Passkey</button>
     </div>
 
 <script nonce="G8">
@@ -105,49 +105,59 @@ const LANGS = {'ar-SA':'🇸🇦 عربي','en-US':'🇺🇸 EN','zh-CN':'🇨�
 
 function initLang() {
     document.getElementById('langScroller').innerHTML = Object.entries(LANGS).map(([code,name]) =>
-        `<div class="lang-chip ${code==='ar-SA'?'active':''}" onclick="setLang('${code}')">${name}</div>`
+        `<div class="lang-chip ${code==='ar-SA'?'active':''}" data-lang="${code}">${name}</div>`
     ).join('');
+    document.querySelectorAll('.lang-chip').forEach(b => b.addEventListener('click', () => setLang(b.dataset.lang, b)));
 }
 initLang();
 
-function setLang(code) {
+function setLang(code, el) {
     currentLang = code;
     document.querySelectorAll('.lang-chip').forEach(b => b.classList.remove('active'));
-    event.target.classList.add('active');
+    el.classList.add('active');
     document.documentElement.lang = code.split('-')[0];
     document.documentElement.dir = code.startsWith('ar')?'rtl':'ltr';
 }
 
-function setIO(mode) {
-    document.querySelectorAll('.io-btn').forEach(t => t.classList.remove('active'));
-    event.target.classList.add('active');
-    document.getElementById('voiceMode').classList.toggle('hidden', mode!=='voice');
-    document.getElementById('textMode').classList.toggle('hidden', mode!=='text');
-}
+document.querySelectorAll('.io-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.io-btn').forEach(t => t.classList.remove('active'));
+        btn.classList.add('active');
+        const mode = btn.dataset.mode;
+        document.getElementById('voiceMode').classList.toggle('hidden', mode!=='voice');
+        document.getElementById('textMode').classList.toggle('hidden', mode!=='text');
+    });
+});
 
 function showStatus(msg, type='ai') {
     const el = document.getElementById('status');
     el.textContent = msg; el.className = `status ${type}`;
 }
 
+document.getElementById('authBtn').addEventListener('click', quantumAuth);
+document.getElementById('voiceRealm').addEventListener('click', invokeVoiceAI);
+document.getElementById('deployBtn').addEventListener('click', () => deployGenesisContract());
+document.getElementById('copyBtn').addEventListener('click', copyQuantumLink);
+document.getElementById('tribunalBtn').addEventListener('click', invokeAITribunal);
+document.getElementById('depositBtn').addEventListener('click', depositToQuantumVault);
+document.getElementById('releaseBtn').addEventListener('click', executeRelease);
+
 async function quantumAuth() {
     try {
-        if (window.PublicKeyCredential) {
-            await navigator.credentials.get({ publicKey: { challenge: crypto.getRandomValues(new Uint8Array(32)), userVerification: 'required' } });
-        }
+        showStatus('Connecting to Pi...', 'ai');
         const auth = await Pi.authenticate(['username','payments','wallet_address'], onIncompletePayment);
         currentUser = auth.user;
         document.getElementById('welcome').textContent = `Quantum Channel: @${auth.user.username}`;
         document.getElementById('authBtn').classList.add('hidden');
         checkContractURL();
+        showStatus('Connected Successfully', 'ok');
     } catch(e) { showStatus(`Quantum Auth Failed: ${e.message}`, 'err'); }
 }
 
 function invokeVoiceAI() {
-    const rec = new webkitSpeechRecognition();
+    const rec = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
     rec.lang = currentLang; rec.continuous = false; rec.interimResults = false;
     document.getElementById('voiceRealm').classList.add('recording');
-
     rec.onresult = e => {
         const text = e.results[0][0].transcript;
         document.getElementById('voiceTranscript').textContent = text;
@@ -161,6 +171,7 @@ function invokeVoiceAI() {
 async function deployGenesisContract(text=null) {
     text = text || document.getElementById('textInput').value.trim();
     if (!text) return showStatus('Input required for Genesis', 'err');
+    if (!currentUser) return showStatus('Connect Wallet First', 'err');
     showStatus('AI Tribunal Analyzing... 3 Agents Voting...', 'ai');
 
     const res = await fetch(`${GENESIS_API}/genesis/deploy`, {
@@ -218,7 +229,7 @@ async function loadContractForBuyer(gid) {
 
 async function invokeAITribunal() {
     const offer = parseFloat(document.getElementById('counterOffer').value);
-    if (!offer) return;
+    if (!offer) return showStatus('Enter counter-offer', 'err');
     const tribunal = document.getElementById('buyerTribunal');
     tribunal.style.display = 'block';
     tribunal.innerHTML = 'AI Tribunal in Deliberation...';
@@ -280,6 +291,8 @@ async function onIncompletePayment(p) {
         body: JSON.stringify({ paymentId: p.identifier, txid: p.transaction?.txid })
     });
 }
+
+checkContractURL();
 </script>
 </body>
 </html>
