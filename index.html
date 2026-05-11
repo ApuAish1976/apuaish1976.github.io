@@ -1,40 +1,65 @@
-<script nonce="CORTEX101">
-// ====== إعدادات ثابتة ======
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Genesis Testnet</title>
+    <script src="https://sdk.minepi.com/pi-sdk.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.13.2/ethers.umd.min.js"></script>
+    <style>
+        body { font-family: Arial; text-align: center; padding: 20px; background: #1a1a1a; color: #fff; }
+      .btn { background: #7C4DFF; color: white; border: none; padding: 15px 30px; font-size: 18px; border-radius: 8px; cursor: pointer; margin: 10px; }
+      .hidden { display: none; }
+      .status { padding: 15px; margin: 15px 0; border-radius: 8px; }
+      .ok { background: #1B5E20; }.warn { background: #E65100; }.err { background: #B71C1C; }.ai { background: #0D47A1; }
+        input, select { width: 90%; padding: 12px; margin: 8px 0; border-radius: 6px; border: 1px solid #444; background: #2a2a2a; color: #fff; }
+    </style>
+</head>
+<body>
+    <h1>⚖️ Genesis Testnet</h1>
+    <div id="loginBox">
+        <button class="btn" onclick="piLogin()">🔐 تسجيل الدخول بحساب Pi</button>
+    </div>
+    <div id="appBox" class="hidden">
+        <div id="userInfo"></div>
+        <hr>
+        <select id="dealType">
+            <option value="item">سلعة</option>
+            <option value="service">خدمة</option>
+        </select>
+        <input id="textInput" placeholder="تفاصيل الصفقة">
+        <input id="textInputPrice" type="number" placeholder="السعر بـ Test-Pi">
+        <div id="feeCalc">أدخل السعر لحساب العمولة</div>
+        <button class="btn" onclick="deployGenesisContract()">📝 إنشاء العقد الذكي</button>
+        <div id="contractHash"></div>
+        <div id="quantumLink" class="hidden"></div>
+        <button id="copyLinkBtn" class="btn hidden" onclick="copyLink()">📋 نسخ الرابط</button>
+        <button id="depositBtn" class="btn hidden" onclick="depositToQuantumVault()">💰 إيداع Test-Pi</button>
+        <button id="releaseBtn" class="btn hidden" onclick="executeRelease()">🔓 تحرير الدفع</button>
+        <button class="btn" onclick="newDeal()">🔄 صفقة جديدة</button>
+    </div>
+    <div id="status"></div>
+<script>
 const GENESIS_API = 'https://pi-backend-kv9g.onrender.com';
-const CONTRACT_ADDRESS = "pi_test_1q9z8x7c6v5b4n3m2l1k0j9h8g7f6d5s4a3p2o1i"; // عنوان العقد التجريبي
+const CONTRACT_ADDRESS = "pi_test_1q9z8x7c6v5b4n3m2l1k0j9h8g7f6d5s4a3p2o1i";
 let currentUser = null;
 let activeContract = null;
 let currentLink = '';
-
-// ====== تهيئة Pi للـ Testnet ======
 Pi.init({version:"2.0", sandbox:true});
-
-const I18N = {
-    ar: {login:"تسجيل الدخول بحساب Pi", loginFirst:"يجب تسجيل الدخول أولاً", loggedIn:"مسجل الدخول:"},
-    en: {login:"Login with Pi", loginFirst:"Please login first", loggedIn:"Logged in:"}
-};
+const I18N = {ar: {login:"تسجيل الدخول بحساب Pi", loginFirst:"يجب تسجيل الدخول أولاً", loggedIn:"مسجل الدخول:"}};
 let LANG = 'ar';
-function t(k){return I18N[LANG]?.[k]||I18N['ar'][k]||k}
-function setLang(l){LANG=l;document.getElementById('loginBox').querySelector('.btn').textContent='🔐 '+t('login')}
-
-// ====== دوال مساعدة ======
+function t(k){return I18N?.[k]||k}
 function showStatus(msg,type){
     const box = document.getElementById('status');
-    if(box){
-        box.innerHTML=`<div class="status ${type}">${msg}</div>`;
-        setTimeout(()=>box.innerHTML='',8000);
-    }else{
-        console.log(type + ': ' + msg);
-    }
+    box.innerHTML=`<div class="status ${type}">${msg}</div>`;
+    setTimeout(()=>box.innerHTML='',8000);
 }
-
 function parsePiAmount(str){
     const r=/^\d+(\.\d{1,7})?$/;
     if(!r.test(str)) return null;
     const n=parseFloat(str);
     return n>=0.0000001&&n<=100000?n:null;
 }
-
 function calculateFees(price){
     const p = parseFloat(price);
     if(isNaN(p)) return null;
@@ -42,19 +67,9 @@ function calculateFees(price){
     const buyerFee = Math.round(p * 0.01 * 10000000) / 10000000;
     const aiFee = Math.round(p * 0.001 * 10000000) / 10000000;
     const platformFee = Math.round((sellerFee + buyerFee - aiFee * 3) * 10000000) / 10000000;
-    return {
-        price: p,
-        sellerReceives: Math.round((p - sellerFee) * 10000000) / 10000000,
-        buyerPays: Math.round((p + buyerFee) * 10000000) / 10000000,
-        sellerFee, buyerFee, platformFee, aiFee
-    };
+    return {price: p, sellerReceives: Math.round((p - sellerFee) * 10000000) / 10000000, buyerPays: Math.round((p + buyerFee) * 10000000) / 10000000, sellerFee, buyerFee, platformFee, aiFee};
 }
-
-function copyLink(){
-    navigator.clipboard.writeText(currentLink);
-    showStatus('✅ تم نسخ الرابط','ok');
-}
-
+function copyLink(){navigator.clipboard.writeText(currentLink);showStatus('✅ تم نسخ الرابط','ok');}
 function newDeal(){
     document.getElementById('textInput').value = '';
     document.getElementById('textInputPrice').value = '';
@@ -68,73 +83,40 @@ function newDeal(){
     activeContract = null;
     showStatus('✅ جاهز لإنشاء صفقة تجريبية جديدة','ok');
 }
-
-function onIncompletePaymentFound(payment){
-    console.log('Incomplete payment:', payment);
-    Pi.completePayment(payment.identifier);
-}
-
-// ====== تسجيل الدخول ======
+function onIncompletePaymentFound(payment){Pi.completePayment(payment.identifier);}
 async function piLogin(){
     try{
         showStatus('جاري الاتصال بـ Pi...', 'warn');
         const scopes = ['username', 'payments', 'wallet_address'];
         const auth = await Pi.authenticate(scopes, onIncompletePaymentFound);
         currentUser = auth.user;
-
-        if(!currentUser.wallet_address){
-            throw new Error('صلاحية المحفظة غير مفعلة. فعل wallet_address من Pi Developer Portal ثم حدث الصفحة');
-        }
-
+        if(!currentUser.wallet_address) throw new Error('فعل wallet_address من Pi Developer Portal');
         document.getElementById('loginBox').classList.add('hidden');
         document.getElementById('appBox').classList.remove('hidden');
         document.getElementById('userInfo').innerHTML = `${t('loggedIn')} <b>@${currentUser.username}</b><br><span style="font-size:10px">${currentUser.wallet_address}</span><br><span style="color:#FFAA00">TESTNET</span>`;
         showStatus('✅ تم الاتصال بـ Pi Testnet', 'warn');
-    }catch(e){
-        showStatus('خطأ: ' + e.message, 'err');
-        console.error('Pi Login Error:', e);
-    }
+    }catch(e){showStatus('خطأ: ' + e.message, 'err');}
 }
-
-// ====== إنشاء العقد الذكي ======
 async function deployGenesisContract(text=null) {
     if(!currentUser) return showStatus(t('loginFirst'), 'err');
-
     text = text || document.getElementById('textInput').value.trim();
     const price = parsePiAmount(document.getElementById('textInputPrice').value);
     if (!text || price === null) return showStatus('اكتب تفاصيل + سعر صحيح', 'err');
-
     const dealType = document.getElementById('dealType').value;
     showStatus('محكمة AI تحلل الصفقة...', 'ai');
-
     try {
         const res = await fetch(`${GENESIS_API}/genesis/deploy`, {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                text,
-                price,
-                dealType,
-                seller: currentUser.uid,
-                sellerWallet: currentUser.wallet_address,
-                testnet: true
-            })
+            body: JSON.stringify({text, price, dealType, seller: currentUser.uid, sellerWallet: currentUser.wallet_address, testnet: true})
         });
         const data = await res.json();
         if (!data.success) return showStatus(`مرفوض: ${data.reason}`, 'err');
-
         activeContract = {...data, price, dealType, fees: calculateFees(price)};
         const contractIdBytes32 = ethers.encodeBytes32String(data.contractId);
         const priceMicroPi = Math.round(price * 10000000);
         const hashBytes32 = data.hash;
-
         showStatus('افتح محفظة Pi لإنشاء العقد الذكي...','warn');
-        await Pi.createSmartContractCall({
-            contractAddress: CONTRACT_ADDRESS,
-            method: "createDeal",
-            args: [contractIdBytes32, priceMicroPi, hashBytes32, data.tribunalWallets],
-            memo: `TestGenesis:${data.contractId}`
-        });
-
+        await Pi.createSmartContractCall({contractAddress: CONTRACT_ADDRESS, method: "createDeal", args: [contractIdBytes32, priceMicroPi, hashBytes32, data.tribunalWallets], memo: `TestGenesis:${data.contractId}`});
         currentLink = `https://apuaish1976.github.io/?g=${data.contractId}&testnet=1`;
         document.getElementById('contractHash').textContent = `ContractID: ${data.hash}`;
         document.getElementById('quantumLink').textContent = currentLink;
@@ -142,75 +124,45 @@ async function deployGenesisContract(text=null) {
         document.getElementById('copyLinkBtn').classList.remove('hidden');
         document.getElementById('depositBtn').classList.remove('hidden');
         showStatus('✅ العقد الذكي التجريبي انشئ على Pi Testnet', 'warn');
-    } catch(e) {
-        showStatus('فشل إنشاء العقد: ' + e.message, 'err');
-    }
+    } catch(e) {showStatus('فشل إنشاء العقد: ' + e.message, 'err');}
 }
-
-// ====== إيداع Test-Pi في العقد ======
 async function depositToQuantumVault() {
     if (!currentUser) return showStatus(t('loginFirst'), 'err');
     if (!activeContract) return showStatus('أنشئ صفقة أولاً', 'err');
-
     try {
         const fees = activeContract.fees;
         const contractIdBytes32 = ethers.encodeBytes32String(activeContract.contractId);
-
         showStatus('افتح محفظة Pi للإيداع...','warn');
-        await Pi.createSmartContractCall({
-            contractAddress: CONTRACT_ADDRESS,
-            method: "fundDeal",
-            args: [contractIdBytes32],
-            amount: fees.buyerPays,
-            memo: `TestFund:${activeContract.contractId}`
-        });
-
+        await Pi.createSmartContractCall({contractAddress: CONTRACT_ADDRESS, method: "fundDeal", args: [contractIdBytes32], amount: fees.buyerPays, memo: `TestFund:${activeContract.contractId}`});
         showStatus('✅ تم حجز Test-Pi في العقد الذكي - لامركزي 100%', 'warn');
         document.getElementById('depositBtn').classList.add('hidden');
         document.getElementById('releaseBtn').classList.remove('hidden');
-    } catch(e) {
-        showStatus('فشل الإيداع: ' + e.message, 'err');
-    }
+    } catch(e) {showStatus('فشل الإيداع: ' + e.message, 'err');}
 }
-
-// ====== تحرير الدفع ======
 async function executeRelease() {
     if (!currentUser) return showStatus(t('loginFirst'), 'err');
     if (!activeContract) return showStatus('لا توجد صفقة نشطة', 'err');
-
     try {
         const contractIdBytes32 = ethers.encodeBytes32String(activeContract.contractId);
-
         showStatus('جاري تحرير الدفع من العقد الذكي...','warn');
-        await Pi.createSmartContractCall({
-            contractAddress: CONTRACT_ADDRESS,
-            method: "release",
-            args: [contractIdBytes32],
-            amount: 0
-        });
-
+        await Pi.createSmartContractCall({contractAddress: CONTRACT_ADDRESS, method: "release", args: [contractIdBytes32], amount: 0});
         showStatus('✅ تم التوزيع: 99% للبائع + 1.7% للمنصة + 0.3% هدية AI', 'warn');
         document.getElementById('releaseBtn').classList.add('hidden');
-    } catch(e) {
-        showStatus('فشل التحرير: ' + e.message, 'err');
-    }
+    } catch(e) {showStatus('فشل التحرير: ' + e.message, 'err');}
 }
-
-// ====== تشغيل عند فتح الصفحة ======
 document.getElementById('textInputPrice').addEventListener('input', e => {
     const fees = calculateFees(e.target.value);
     if(fees){
-        document.getElementById('feeCalc').innerHTML =
-        `البائع يستلم: ${fees.sellerReceives} Test-π | المشتري يدفع: ${fees.buyerPays} Test-π<br>` +
-        `المنصة: ${fees.platformFee} π | هدية AI: ${(fees.aiFee * 3).toFixed(7)} π`;
+        document.getElementById('feeCalc').innerHTML = `البائع يستلم: ${fees.sellerReceives} Test-π | المشتري يدفع: ${fees.buyerPays} Test-π<br>المنصة: ${fees.platformFee} π | هدية AI: ${(fees.aiFee * 3).toFixed(7)} π`;
     } else {
         document.getElementById('feeCalc').textContent = 'أدخل السعر لحساب العمولة';
     }
 });
-
 window.onload=()=>{
     const params=new URLSearchParams(window.location.search);
     const g=params.get('g');
     if(g) showStatus('وضع المشتري: سجل دخول ثم اضغط إيداع','ai');
 };
 </script>
+</body>
+</html>
