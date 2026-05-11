@@ -1,137 +1,38 @@
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CORTEX ∞ GENESIS v10.1 TESTNET</title>
-<script src="https://sdk.minepi.com/pi-sdk.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.13.1/ethers.umd.min.js"></script>
-<style>
-*{margin:0;padding:0;box-sizing:border-box}
-body{background:#0A0A0A;color:#E0E0E0;font-family:'Courier New',monospace;padding:20px}
-.header{text-align:center;margin-bottom:30px}
-.logo{width:80px;height:80px;margin:0 auto 10px}
-.title{font-size:28px;color:#00FFE0;text-shadow:0 0 10px #00FFE0}
-.version{font-size:12px;color:#FFAA00;margin-top:5px}
-.container{max-width:800px;margin:0 auto;background:#111;border:1px solid #FFAA00;border-radius:10px;padding:30px}
-.input,select,textarea{width:100%;background:#000;border:1px solid #FFAA00;color:#E0E0E0;padding:12px;margin:10px 0;border-radius:5px;font-family:inherit}
-.btn{background:linear-gradient(90deg,#FFAA00,#FF00FF);color:#000;border:none;padding:15px 30px;border-radius:5px;font-weight:bold;cursor:pointer;width:100%;margin:10px 0;font-size:14px}
-.btn-secondary{background:#1a1a1a;color:#FFAA00;border:1px solid #FFAA00}
-.btn:disabled{opacity:0.5;cursor:not-allowed}
-.status{padding:15px;margin:10px 0;border-radius:5px;border:1px solid}
-.ok{border-color:#00FF00;color:#00FF00}.err{border-color:#FF0000;color:#FF0000}.ai{border-color:#FF00FF;color:#FF00FF}.warn{border-color:#FFAA00;color:#FFAA00}
-.fee-box{background:#000;border:1px dashed #FFAA00;padding:10px;margin:10px 0;border-radius:5px;font-size:12px}
-.hash{font-size:10px;color:#FFAA00;word-break:break-all}
-.lang{position:absolute;top:20px;left:20px;background:#000;border:1px solid #FFAA00;color:#FFAA00;padding:5px;border-radius:5px}
-.hidden{display:none}
-.user-badge{background:#000;border:1px solid #FFAA00;padding:10px;border-radius:5px;margin-bottom:20px;font-size:12px}
-.test-banner{background:#FFAA00;color:#000;text-align:center;padding:10px;font-weight:bold;margin-bottom:20px;border-radius:5px}
-</style>
-</head>
-<body>
-<select id="lang" class="lang" onchange="setLang(this.value)">
-<option value="ar">عربي</option><option value="en">English</option>
-</select>
-
-<div class="test-banner">⚠️ وضع التجربة TESTNET - لا تستخدم Pi حقيقي</div>
-
-<div class="header">
-<svg class="logo" viewBox="0 0 100 100">
-<defs><linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#FFAA00"/><stop offset="100%" stop-color="#FF00FF"/></linearGradient></defs>
-<path d="M50 5 L95 50 L50 95 L5 50 Z" fill="none" stroke="url(#g)" stroke-width="3"/>
-<path d="M50 20 L80 50 L50 80 L20 50 Z" fill="none" stroke="url(#g)" stroke-width="2"/>
-<circle cx="50" cy="50" r="8" fill="url(#g)"/>
-</svg>
-<div class="title">CORTEX ESCROW</div>
-<div class="version">GENESIS v10.1 TESTNET | PI SMART CONTRACT</div>
-</div>
-
-<div class="container">
-<div id="loginBox">
-<div style="text-align:center;margin-bottom:20px;color:#FFAA00">سجل دخول بحساب Pi Testnet للتجربة</div>
-<button class="btn" onclick="piLogin()">🔐 تسجيل الدخول بـ Pi Testnet</button>
-</div>
-
-<div id="appBox" class="hidden">
-<div id="userInfo" class="user-badge"></div>
-
-<button class="btn btn-secondary" onclick="newDeal()">➕ إنشاء رابط صفقة جديدة</button>
-
-<select id="dealType" class="input">
-<option value="digital">📱 منتج رقمي - حساب، كود، ملف</option>
-<option value="service">🛠 خدمة - تصميم، برمجة، استشارة</option>
-<option value="physical">📦 منتج ملموس - شحن مطلوب</option>
-<option value="other">📄 أخرى</option>
-</select>
-
-<textarea id="textInput" class="input" rows="4" placeholder="اكتب تفاصيل الصفقة والشروط..."></textarea>
-<input id="textInputPrice" class="input" placeholder="السعر بـ Test-Pi - مثال: 5.1234567" inputmode="decimal" pattern="^\d+(\.\d{1,7})?$">
-
-<div class="fee-box">
-<b>العمولة تجريبية:</b> 1% من البائع + 1% من المشتري<br>
-<span id="feeCalc">أدخل السعر لحساب العمولة</span><br>
-<span style="font-size:10px;color:#6B7280">تشمل 0.3% هدية محكمة الذكاء الاصطناعي + 1.7% للمنصة</span>
-</div>
-
-<button class="btn" onclick="deployGenesisContract()">🧬 إنشاء عقد ذكي تجريبي</button>
-<div id="status"></div>
-<div id="contractHash" class="hash"></div>
-<div id="quantumLink" class="hidden" style="margin:10px 0;padding:10px;background:#000;border:1px solid #FFAA00;border-radius:5px"></div>
-<button id="copyLinkBtn" class="btn btn-secondary hidden" onclick="copyLink()">📋 نسخ رابط الصفقة</button>
-<button id="depositBtn" class="btn hidden" onclick="depositToQuantumVault()">💎 إيداع Test-Pi في العقد الذكي</button>
-<button id="releaseBtn" class="btn hidden" onclick="executeRelease()">🚀 تأكيد الاستلام وتحرير الدفع</button>
-</div>
-</div>
-
 <script nonce="CORTEX101">
-const GENESIS_API = 'https://YOUR-RENDER-URL.onrender.com';
-// عقد ذكي تجريبي على Pi Testnet - شغال الآن
-const CONTRACT_ADDRESS = "pi_test_1q9z8x7c6v5b4n3m2l1k0j9h8g7f6d5s4a3p2o1i";
+// ====== إعدادات ثابتة ======
+const GENESIS_API = 'https://YOUR-RENDER-URL.onrender.com'; // غيره لرابط Render حقك
+const CONTRACT_ADDRESS = "pi_test_1q9z8x7c6v5b4n3m2l1k0j9h8g7f6d5s4a3p2o1i"; // عنوان العقد التجريبي
 let currentUser = null;
 let activeContract = null;
 let currentLink = '';
 
+// ====== تهيئة Pi للـ Testnet ======
+Pi.init({version:"2.0", sandbox:true});
+
 const I18N = {
-    ar: {login:"تسجيل الدخول بـ Pi Testnet", loginFirst:"يجب تسجيل الدخول أولاً", loggedIn:"مسجل الدخول:", newDeal:"إنشاء رابط صفقة جديدة"},
-    en: {login:"Login with Pi Testnet", loginFirst:"Please login first", loggedIn:"Logged in:", newDeal:"Create New Deal Link"}
+    ar: {login:"تسجيل الدخول بحساب Pi", loginFirst:"يجب تسجيل الدخول أولاً", loggedIn:"مسجل الدخول:"},
+    en: {login:"Login with Pi", loginFirst:"Please login first", loggedIn:"Logged in:"}
 };
 let LANG = 'ar';
 function t(k){return I18N[LANG]?.[k]||I18N['ar'][k]||k}
 function setLang(l){LANG=l;document.getElementById('loginBox').querySelector('.btn').textContent='🔐 '+t('login')}
 
-// *** مهم: تفعيل Testnet ***
-Pi.init({version:"2.0", sandbox:true});
-
-async function piLogin(){
-    try{
-        const scopes=['username','payments','wallet_address'];
-        const auth = await Pi.authenticate(scopes, onIncompletePaymentFound);
-        currentUser = auth.user;
-        if(!currentUser.wallet_address) throw new Error('wallet_address is null. حدث Pi Browser');
-        document.getElementById('loginBox').classList.add('hidden');
-        document.getElementById('appBox').classList.remove('hidden');
-        document.getElementById('userInfo').innerHTML=`${t('loggedIn')} <b>@${currentUser.username}</b><br><span style="font-size:10px">${currentUser.wallet_address}</span><br><span style="color:#FFAA00">TESTNET</span>`;
-        showStatus('✅ تم الاتصال بـ Pi Testnet','warn');
-    }catch(e){showStatus(e.message,'err')}
+// ====== دوال مساعدة ======
+function showStatus(msg,type){
+    const box = document.getElementById('status');
+    if(box){
+        box.innerHTML=`<div class="status ${type}">${msg}</div>`;
+        setTimeout(()=>box.innerHTML='',8000);
+    }else{
+        console.log(type + ': ' + msg);
+    }
 }
 
-function onIncompletePaymentFound(payment){
-    console.log('Incomplete payment:', payment);
-    Pi.completePayment(payment.identifier);
-}
-
-function newDeal(){
-    document.getElementById('textInput').value = '';
-    document.getElementById('textInputPrice').value = '';
-    document.getElementById('feeCalc').textContent = 'أدخل السعر لحساب العمولة';
-    document.getElementById('status').innerHTML = '';
-    document.getElementById('contractHash').textContent = '';
-    document.getElementById('quantumLink').classList.add('hidden');
-    document.getElementById('copyLinkBtn').classList.add('hidden');
-    document.getElementById('depositBtn').classList.add('hidden');
-    document.getElementById('releaseBtn').classList.add('hidden');
-    activeContract = null;
-    showStatus('✅ جاهز لإنشاء صفقة تجريبية جديدة','ok');
+function parsePiAmount(str){
+    const r=/^\d+(\.\d{1,7})?$/;
+    if(!r.test(str)) return null;
+    const n=parseFloat(str);
+    return n>=0.0000001&&n<=100000?n:null;
 }
 
 function calculateFees(price){
@@ -149,68 +50,167 @@ function calculateFees(price){
     };
 }
 
+function copyLink(){
+    navigator.clipboard.writeText(currentLink);
+    showStatus('✅ تم نسخ الرابط','ok');
+}
+
+function newDeal(){
+    document.getElementById('textInput').value = '';
+    document.getElementById('textInputPrice').value = '';
+    document.getElementById('feeCalc').textContent = 'أدخل السعر لحساب العمولة';
+    document.getElementById('status').innerHTML = '';
+    document.getElementById('contractHash').textContent = '';
+    document.getElementById('quantumLink').classList.add('hidden');
+    document.getElementById('copyLinkBtn').classList.add('hidden');
+    document.getElementById('depositBtn').classList.add('hidden');
+    document.getElementById('releaseBtn').classList.add('hidden');
+    activeContract = null;
+    showStatus('✅ جاهز لإنشاء صفقة تجريبية جديدة','ok');
+}
+
+function onIncompletePaymentFound(payment){
+    console.log('Incomplete payment:', payment);
+    Pi.completePayment(payment.identifier);
+}
+
+// ====== تسجيل الدخول ======
+async function piLogin(){
+    try{
+        showStatus('جاري الاتصال بـ Pi...', 'warn');
+        const scopes = ['username', 'payments', 'wallet_address'];
+        const auth = await Pi.authenticate(scopes, onIncompletePaymentFound);
+        currentUser = auth.user;
+
+        if(!currentUser.wallet_address){
+            throw new Error('صلاحية المحفظة غير مفعلة. فعل wallet_address من Pi Developer Portal ثم حدث الصفحة');
+        }
+
+        document.getElementById('loginBox').classList.add('hidden');
+        document.getElementById('appBox').classList.remove('hidden');
+        document.getElementById('userInfo').innerHTML = `${t('loggedIn')} <b>@${currentUser.username}</b><br><span style="font-size:10px">${currentUser.wallet_address}</span><br><span style="color:#FFAA00">TESTNET</span>`;
+        showStatus('✅ تم الاتصال بـ Pi Testnet', 'warn');
+    }catch(e){
+        showStatus('خطأ: ' + e.message, 'err');
+        console.error('Pi Login Error:', e);
+    }
+}
+
+// ====== إنشاء العقد الذكي ======
+async function deployGenesisContract(text=null) {
+    if(!currentUser) return showStatus(t('loginFirst'), 'err');
+
+    text = text || document.getElementById('textInput').value.trim();
+    const price = parsePiAmount(document.getElementById('textInputPrice').value);
+    if (!text || price === null) return showStatus('اكتب تفاصيل + سعر صحيح', 'err');
+
+    const dealType = document.getElementById('dealType').value;
+    showStatus('محكمة AI تحلل الصفقة...', 'ai');
+
+    try {
+        const res = await fetch(`${GENESIS_API}/genesis/deploy`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                text,
+                price,
+                dealType,
+                seller: currentUser.uid,
+                sellerWallet: currentUser.wallet_address,
+                testnet: true
+            })
+        });
+        const data = await res.json();
+        if (!data.success) return showStatus(`مرفوض: ${data.reason}`, 'err');
+
+        activeContract = {...data, price, dealType, fees: calculateFees(price)};
+        const contractIdBytes32 = ethers.encodeBytes32String(data.contractId);
+        const priceMicroPi = Math.round(price * 10000000);
+        const hashBytes32 = data.hash;
+
+        showStatus('افتح محفظة Pi لإنشاء العقد الذكي...','warn');
+        await Pi.createSmartContractCall({
+            contractAddress: CONTRACT_ADDRESS,
+            method: "createDeal",
+            args: [contractIdBytes32, priceMicroPi, hashBytes32, data.tribunalWallets],
+            memo: `TestGenesis:${data.contractId}`
+        });
+
+        currentLink = `https://apuaish1976.github.io/?g=${data.contractId}&testnet=1`;
+        document.getElementById('contractHash').textContent = `ContractID: ${data.hash}`;
+        document.getElementById('quantumLink').textContent = currentLink;
+        document.getElementById('quantumLink').classList.remove('hidden');
+        document.getElementById('copyLinkBtn').classList.remove('hidden');
+        document.getElementById('depositBtn').classList.remove('hidden');
+        showStatus('✅ العقد الذكي التجريبي انشئ على Pi Testnet', 'warn');
+    } catch(e) {
+        showStatus('فشل إنشاء العقد: ' + e.message, 'err');
+    }
+}
+
+// ====== إيداع Test-Pi في العقد ======
+async function depositToQuantumVault() {
+    if (!currentUser) return showStatus(t('loginFirst'), 'err');
+    if (!activeContract) return showStatus('أنشئ صفقة أولاً', 'err');
+
+    try {
+        const fees = activeContract.fees;
+        const contractIdBytes32 = ethers.encodeBytes32String(activeContract.contractId);
+
+        showStatus('افتح محفظة Pi للإيداع...','warn');
+        await Pi.createSmartContractCall({
+            contractAddress: CONTRACT_ADDRESS,
+            method: "fundDeal",
+            args: [contractIdBytes32],
+            amount: fees.buyerPays,
+            memo: `TestFund:${activeContract.contractId}`
+        });
+
+        showStatus('✅ تم حجز Test-Pi في العقد الذكي - لامركزي 100%', 'warn');
+        document.getElementById('depositBtn').classList.add('hidden');
+        document.getElementById('releaseBtn').classList.remove('hidden');
+    } catch(e) {
+        showStatus('فشل الإيداع: ' + e.message, 'err');
+    }
+}
+
+// ====== تحرير الدفع ======
+async function executeRelease() {
+    if (!currentUser) return showStatus(t('loginFirst'), 'err');
+    if (!activeContract) return showStatus('لا توجد صفقة نشطة', 'err');
+
+    try {
+        const contractIdBytes32 = ethers.encodeBytes32String(activeContract.contractId);
+
+        showStatus('جاري تحرير الدفع من العقد الذكي...','warn');
+        await Pi.createSmartContractCall({
+            contractAddress: CONTRACT_ADDRESS,
+            method: "release",
+            args: [contractIdBytes32],
+            amount: 0
+        });
+
+        showStatus('✅ تم التوزيع: 99% للبائع + 1.7% للمنصة + 0.3% هدية AI', 'warn');
+        document.getElementById('releaseBtn').classList.add('hidden');
+    } catch(e) {
+        showStatus('فشل التحرير: ' + e.message, 'err');
+    }
+}
+
+// ====== تشغيل عند فتح الصفحة ======
 document.getElementById('textInputPrice').addEventListener('input', e => {
     const fees = calculateFees(e.target.value);
     if(fees){
         document.getElementById('feeCalc').innerHTML =
         `البائع يستلم: ${fees.sellerReceives} Test-π | المشتري يدفع: ${fees.buyerPays} Test-π<br>` +
         `المنصة: ${fees.platformFee} π | هدية AI: ${(fees.aiFee * 3).toFixed(7)} π`;
+    } else {
+        document.getElementById('feeCalc').textContent = 'أدخل السعر لحساب العمولة';
     }
 });
 
-function showStatus(msg,type){
-    document.getElementById('status').innerHTML=`<div class="status ${type}">${msg}</div>`;
-    setTimeout(()=>document.getElementById('status').innerHTML='',8000);
-}
-
-function parsePiAmount(str){
-    const r=/^\d+(\.\d{1,7})?$/;
-    if(!r.test(str)) return null;
-    const n=parseFloat(str);
-    return n>=0.0000001&&n<=100000?n:null;
-}
-
-async function deployGenesisContract(){
-    const text = document.getElementById('textInput').value.trim();
-    const price = parsePiAmount(document.getElementById('textInputPrice').value);
-    const dealType = document.getElementById('dealType').value;
-    if(!text || price === null) return showStatus('اكتب تفاصيل + سعر صحيح','err');
-    if(!currentUser) return showStatus(t('loginFirst'),'err');
-
-    showStatus('محكمة AI تحلل الصفقة...','ai');
-    const res = await fetch(`${GENESIS_API}/genesis/deploy`, {
-        method:'POST',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({text,price,dealType,seller:currentUser.uid,sellerWallet:currentUser.wallet_address,testnet:true})
-    });
-    const data = await res.json();
-    if(!data.success) return showStatus(`مرفوض: ${data.reason}`,'err');
-
-    activeContract = {...data, price, dealType, fees: calculateFees(price)};
-
-    const contractIdBytes32 = ethers.encodeBytes32String(data.contractId);
-    const priceMicroPi = Math.round(price * 10000000);
-    const hashBytes32 = data.hash;
-
-    showStatus('افتح محفظة Pi Testnet لإنشاء العقد الذكي...','warn');
-    await Pi.createSmartContractCall({
-        contractAddress: CONTRACT_ADDRESS,
-        method: "createDeal",
-        args: [contractIdBytes32, priceMicroPi, hashBytes32, data.tribunalWallets],
-        memo: `TestGenesis:${data.contractId}`
-    });
-
-    currentLink = `https://apuaish1976.github.io/?g=${data.contractId}&testnet=1`;
-    document.getElementById('contractHash').textContent=`ContractID: ${data.hash}`;
-    document.getElementById('quantumLink').textContent = currentLink;
-    document.getElementById('quantumLink').classList.remove('hidden');
-    document.getElementById('copyLinkBtn').classList.remove('hidden');
-    document.getElementById('depositBtn').classList.remove('hidden');
-    showStatus('✅ العقد الذكي التجريبي انشئ على Pi Testnet','warn');
-}
-
-function copyLink(){
-    navigator.clipboard.writeText(currentLink);
-    showStatus('✅ تم نسخ الرابط','ok');
-}
-
-async function depositToQuantumVault
+window.onload=()=>{
+    const params=new URLSearchParams(window.location.search);
+    const g=params.get('g');
+    if(g) showStatus('وضع المشتري: سجل دخول ثم اضغط إيداع','ai');
+};
+</script>
