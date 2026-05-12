@@ -3,35 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://sdk.minepi.com https://cdnjs.cloudflare.com; script-src 'self' 'nonce-cortex101' https://sdk.minepi.com https://cdnjs.cloudflare.com; connect-src 'self' https://pi-backend-kv9g.onrender.com https://api.minepi.com;">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://sdk.minepi.com https://cdnjs.cloudflare.com; script-src 'self' 'unsafe-inline' https://sdk.minepi.com https://cdnjs.cloudflare.com; connect-src 'self' https://pi-backend-kv9g.onrender.com https://api.minepi.com;">
     <title>Cortex Escrow V.10.1</title>
-    <script nonce="cortex101" src="https://sdk.minepi.com/pi-sdk.js"></script>
-    <script nonce="cortex101" src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.13.2/ethers.umd.min.js"></script>
-    <style nonce="cortex101">
-        body{font-family:'Segoe UI',Tahoma,sans-serif;background:#0f0f23;color:#fff;margin:0;padding:20px}
-     .container{background:#1a1a2e;padding:25px;border-radius:15px;max-width:600px;margin:0 auto}
-     .btn{background:linear-gradient(45deg,#6c5ce7,#a29bfe);color:white;border:none;padding:12px 20px;border-radius:8px;font-size:14px;cursor:pointer;width:100%;margin:8px 0}
-     .btn:disabled{opacity:.5;cursor:not-allowed}
-        input,select,textarea{width:100%;padding:10px;margin:8px 0;border-radius:6px;border:1px solid #333;background:#16213e;color:#fff;box-sizing:border-box}
-     .status{padding:10px;border-radius:6px;margin:10px 0;font-size:13px}
-     .ok{background:#1a4d2e;color:#4ade80}
-     .err{background:#4c1d1d;color:#f87171}
-     .warn{background:#4a3c1a;color:#fbbf24}
-     .ai{background:#1e3a5f;color:#60a5fa}
-     .hidden{display:none}
-     .user-info{background:#16213e;padding:12px;border-radius:8px;margin:15px 0;font-size:13px}
-        #feeCalc{font-size:12px;color:#a0a0a0;margin:5px 0}
-        #quantumLink{word-break:break-all;background:#0f0f23;padding:10px;border-radius:6px;font-size:12px}
-        label{font-size:13px;color:#a0a0a0;display:block;margin-top:10px}
+    <script src="https://sdk.minepi.com/pi-sdk.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.13.2/ethers.umd.min.js"></script>
+    <style>
+        *{box-sizing:border-box;margin:0;padding:0}
+        body{font-family:'Segoe UI',Tahoma,sans-serif;background:#0f0f23;color:#fff;padding:15px}
+        .container{background:#1a1a2e;padding:20px;border-radius:15px;max-width:600px;margin:0 auto}
+        .btn{background:linear-gradient(45deg,#6c5ce7,#a29bfe);color:white;border:none;padding:14px 20px;border-radius:8px;font-size:15px;cursor:pointer;width:100%;margin:10px 0;display:block;text-align:center}
+        input,select,textarea{width:100%;padding:12px;margin:8px 0;border-radius:6px;border:1px solid #333;background:#16213e;color:#fff;font-size:15px}
+        .status{padding:12px;border-radius:6px;margin:12px 0;font-size:14px}
+        .ok{background:#1a4d2e;color:#4ade80}
+        .err{background:#4c1d1d;color:#f87171}
+        .warn{background:#4a3c1a;color:#fbbf24}
+        .ai{background:#1e3a5f;color:#60a5fa}
+        .hidden{display:none!important}
+        .user-info{background:#16213e;padding:14px;border-radius:8px;margin:15px 0;font-size:14px;line-height:1.8}
+        #feeCalc{font-size:13px;color:#a0a0a0;margin:8px 0;line-height:1.6}
+        #quantumLink{word-break:break-all;background:#0f0f23;padding:12px;border-radius:6px;font-size:13px;margin:10px 0}
+        label{font-size:14px;color:#a0a0a0;display:block;margin-top:12px;margin-bottom:4px}
+        h2,h3{text-align:center;margin:10px 0}
     </style>
 </head>
 <body>
     <div class="container">
         <div id="loginBox">
             <h2>Cortex Escrow V.10.1</h2>
-            <p>منصة الضمان الذكي على شبكة Pi - Testnet</p>
+            <p style="text-align:center;margin:15px 0">منصة الضمان الذكي على شبكة Pi - Testnet</p>
             <button class="btn" id="loginBtn">🔐 تسجيل الدخول بحساب Pi</button>
         </div>
+
         <div id="appBox" class="hidden">
             <h3>محكمة العقود الذكية</h3>
             <div id="userInfo" class="user-info"></div>
@@ -65,7 +67,7 @@
         </div>
     </div>
 
-<script nonce="cortex101">
+<script>
 const GENESIS_API = 'https://pi-backend-kv9g.onrender.com';
 const ESCROW_ADDRESS = "GANJOECQGTUJQRYDCNSV5NODXXEDJ273RPWA3ZVPOQQ252ZLXRY4LLM3";
 let currentUser = null;
@@ -73,9 +75,6 @@ let activeContract = null;
 let currentLink = '';
 
 Pi.init({version:"2.0", sandbox:true});
-
-const I18N = {ar:{login:"تسجيل الدخول بحساب Pi",loginFirst:"يجب تسجيل الدخول أولاً",loggedIn:"مسجل الدخول:"}};
-function t(k){return I18N?.[k]||I18N['ar'][k]||k}
 
 function showStatus(msg,type='warn'){
     const box=document.getElementById('status');
@@ -109,7 +108,7 @@ function onIncompletePaymentFound(payment){
     return Pi.completePayment(payment.identifier);
 }
 
-document.getElementById('loginBtn').addEventListener('click', async ()=>{
+document.getElementById('loginBtn').onclick = async ()=>{
     try{
         showStatus('جاري الاتصال بـ Pi...','warn');
         const scopes=['username','payments'];
@@ -117,15 +116,15 @@ document.getElementById('loginBtn').addEventListener('click', async ()=>{
         currentUser=auth.user;
         document.getElementById('loginBox').classList.add('hidden');
         document.getElementById('appBox').classList.remove('hidden');
-        document.getElementById('userInfo').innerHTML=`${t('loggedIn')} <b>@${currentUser.username}</b><br><span style="font-size:10px">UID: ${currentUser.uid}</span><br><span style="color:#FFAA00">TESTNET</span>`;
+        document.getElementById('userInfo').innerHTML=`مسجل الدخول: <b>@${currentUser.username}</b><br><span style="font-size:11px">UID: ${currentUser.uid}</span><br><span style="color:#FFAA00">TESTNET</span>`;
         showStatus('✅ تم الاتصال بـ Pi Testnet','ok');
     }catch(e){
         showStatus('خطأ: '+e.message,'err');
     }
-});
+};
 
-document.getElementById('deployBtn').addEventListener('click', async ()=>{
-    if(!currentUser) return showStatus(t('loginFirst'),'err');
+document.getElementById('deployBtn').onclick = async ()=>{
+    if(!currentUser) return showStatus('يجب تسجيل الدخول أولاً','err');
     const text=document.getElementById('textInput').value.trim();
     const price=parsePiAmount(document.getElementById('textInputPrice').value);
     const sellerWallet=document.getElementById('sellerWalletInput').value.trim();
@@ -170,10 +169,10 @@ document.getElementById('deployBtn').addEventListener('click', async ()=>{
         if(e.name==='AbortError') showStatus('انتهت مهلة الاتصال بالخادم','err');
         else showStatus('فشل إنشاء العقد: '+e.message,'err');
     }
-});
+};
 
-document.getElementById('depositBtn').addEventListener('click', async ()=>{
-    if(!currentUser) return showStatus(t('loginFirst'),'err');
+document.getElementById('depositBtn').onclick = async ()=>{
+    if(!currentUser) return showStatus('يجب تسجيل الدخول أولاً','err');
     if(!activeContract) return showStatus('أنشئ صفقة أولاً','err');
 
     try{
@@ -194,10 +193,10 @@ document.getElementById('depositBtn').addEventListener('click', async ()=>{
     }catch(e){
         showStatus('فشل الإيداع: '+e.message,'err');
     }
-});
+};
 
-document.getElementById('releaseBtn').addEventListener('click', async ()=>{
-    if(!currentUser) return showStatus(t('loginFirst'),'err');
+document.getElementById('releaseBtn').onclick = async ()=>{
+    if(!currentUser) return showStatus('يجب تسجيل الدخول أولاً','err');
     if(!activeContract) return showStatus('لا توجد صفقة نشطة','err');
 
     try{
@@ -220,9 +219,9 @@ document.getElementById('releaseBtn').addEventListener('click', async ()=>{
     }catch(e){
         showStatus('فشل التحرير: '+e.message,'err');
     }
-});
+};
 
-document.getElementById('newDealBtn').addEventListener('click', ()=>{
+document.getElementById('newDealBtn').onclick = ()=>{
     document.getElementById('textInput').value='';
     document.getElementById('textInputPrice').value='';
     document.getElementById('sellerWalletInput').value='';
@@ -235,14 +234,14 @@ document.getElementById('newDealBtn').addEventListener('click', ()=>{
     document.getElementById('releaseBtn').classList.add('hidden');
     activeContract=null;
     showStatus('✅ جاهز لإنشاء صفقة تجريبية جديدة','ok');
-});
+};
 
-document.getElementById('copyLinkBtn').addEventListener('click', ()=>{
+document.getElementById('copyLinkBtn').onclick = ()=>{
     navigator.clipboard.writeText(currentLink);
     showStatus('✅ تم نسخ الرابط','ok');
-});
+};
 
-document.getElementById('textInputPrice').addEventListener('input',e=>{
+document.getElementById('textInputPrice').oninput = e=>{
     const fees=calculateFees(e.target.value);
     if(fees){
         document.getElementById('feeCalc').innerHTML=
@@ -251,12 +250,6 @@ document.getElementById('textInputPrice').addEventListener('input',e=>{
     }else{
         document.getElementById('feeCalc').textContent='أدخل السعر لحساب العمولة';
     }
-});
-
-window.onload=()=>{
-    const params=new URLSearchParams(window.location.search);
-    const g=params.get('g');
-    if(g) showStatus('وضع المشتري: سجل دخول ثم اضغط إيداع','ai');
 };
 </script>
 </body>
