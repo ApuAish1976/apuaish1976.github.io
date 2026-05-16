@@ -160,5 +160,26 @@ function sendCounterOffer(){
   alert('تم تحديث السعر. اضغط "إنشاء العقد الذكي" لإرسال العرض الجديد للمشتري');
 }
 </script>
-</body>
+<script>
+Pi.init({version: "2.0", sandbox: true})
+.then(() => Pi.authenticate(['username', 'payments']))
+.then(function(auth) {
+    document.getElementById('authStatus').innerText = 'تم الاتصال: ' + auth.user.username;
+    
+    return fetch('https://api.minepi.com/v2/me', {
+        method: 'GET',
+        headers: {
+            'Authorization': 'Bearer ' + auth.result.accessToken
+        }
+    });
+})
+.then(res => res.json())
+.then(user => {
+    console.log('Verified user:', user);
+})
+.catch(err => {
+    document.getElementById('authStatus').innerText = 'فشل الاتصال';
+    console.error('Auth error:', err);
+});
+</script>/body>
 </html>
