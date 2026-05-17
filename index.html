@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cortex Escrow V12.1</title>
+    <script src="https://sdk.minepi.com/pi-sdk.js"></script>
+    <style>
+        :root{--bg:#0a0a0f;--card:#14141c;--accent:#6c5ce7;--success:#00d084;--error:#ff4757;--warn:#ffa502;--text:#f1f2f6;--muted:#747d8c;--border:#2f3542}
+        *{box-sizing:border-box;margin:0;padding:0}
+        body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);padding:16px}
+       .container{max-width:720px;margin:0 auto;background:var(--card);border:1px solid var(--border);border-radius:16px;padding:24px;position:relative}
+       .lang-select{position:absolute;top:16px;left:16px;background:#1e1e28;border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:6px;font-size:13px}
+        h2{text-align:center;margin:8px 0 4px;font-weight:700}
+       .subtitle{text-align:center;color:var(--muted);margin-bottom:24px;font-size:14px}
+       .btn{background:linear-gradient(135deg,var(--accent),#8b7cf6);color:#fff;border:none;padding:14px 20px;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;width:100%;margin:10px 0}
+       .btn:disabled{opacity:.5;cursor:not-allowed}
+        input,select,textarea{width:100%;padding:12px 14px;margin:8px 0;border-radius:8px;border:1px solid var(--border);background:#1e1e28;color:var(--text);font-size:15px}
+        input:focus,textarea:focus,select:focus{outline:none;border-color:var(--accent)}
+        label{font-size:13px;color:var(--muted);display:block;margin:16px 0 4px}
+       .status{padding:14px;border-radius:8px;margin:16px 0;font-size:14px;border-left:4px solid}
+       .status.ok{background:rgba(0,208,132,.1);border-color:var(--success);color:var(--success)}
+       .status.err{background:rgba(255,71,87,.1);border-color:var(--error);color:var(--error)}
+       .status.warn{background:rgba(255,165,2,.1);border-color:var(--warn);color:var(--warn)}
+       .status.info{background:rgba(108,92,231,.1);border-color:var(--accent);color:var(--accent)}
+       .user-card{background:#1e1e28;padding:16px;border-radius:10px;margin:16px 0;border:1px solid var(--border)}
+       .fee-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:12px 0}
+       .fee-item{background:#1e1e28;padding:12px;border-radius:8px;font-size:13px}
+       .fee-item strong{display:block;color:var(--accent);font-size:16px;margin-top:4px}
+       .link-box{word-break:break-all;background:#0f0f17;padding:12px;border-radius:8px;font-size:13px;margin:12px 0;font-family:monospace}
+       .terms-box{background:#1e1e28;padding:16px;border-radius:8px;margin:12px 0;border:1px dashed var(--border)}
+       .blocked-screen{text-align:center;padding:60px 20px}
+        [dir="rtl"]{text-align:right}
+        [dir="ltr"]{text-align:left}
+    </style>
+</head>
+<body>
+    <select class="lang-select" id="langSelect"></select>
+    <div id="app"></div>
+
+<script type="module">
+const CONFIG = {
+    GENESIS_API: 'https://pi-backend-kv9g.onrender.com',
+    ESCROW_ADDRESS: "GANJOECQGTUJQRYDCNSV5NODXXEDJ273RPWA3ZVPOQQ252ZLXRY4LLM3",
+    APP_ID: "24f0d30e-9254-4936-9425-751c825c4aea",
+    VERSION: "12.1.0",
+    NETWORK: "testnet"
+};
+
+const I18N = {
+    ar:{title:"Cortex Escrow V12.1",subtitle:"بروتوكول الضمان اللامركزي",login:"تسجيل الدخول عبر Pi Protocol",dealType:"نوع الصفقة",details:"تفاصيل الصفقة",terms:"شروط الصفقة",delivery:"مدة التسليم بالأيام",price:"السعر بـ Pi",sellerWallet:"محفظة البائع - Testnet",create:"إنشاء عقد ذكي موقّع",deposit:"إيداع في الضمان",release:"تحرير الدفع",newDeal:"صفقة جديدة",copyLink:"نسخ الرابط الموقّع",blocked:"ممنوع الوصول",blockedMsg:"هذه المنصة تعمل حصرياً داخل Pi Browser"},
+    en:{title:"Cortex Escrow V12.1",subtitle:"Decentralized Escrow Protocol",login:"Login with Pi Protocol",dealType:"Deal Type",details:"Deal Details",terms:"Deal Terms",delivery:"Delivery Days",price:"Price in Pi",sellerWallet:"Seller Wallet - Testnet",create:"Create Signed Smart Contract",deposit:"Deposit to Escrow",release:"Release Payment",newDeal:"New Deal",copyLink:"Copy Signed Link",blocked:"Access Denied",blockedMsg:"This platform works exclusively inside Pi Browser"},
+    es:{title:"Cortex Escrow V12.1",subtitle:"Protocolo de Garantía Descentralizada",login:"Iniciar sesión con Pi Protocol",dealType:"Tipo de Acuerdo",details:"Detalles del Acuerdo",terms:"Términos del Acuerdo",delivery:"Días de Entrega",price:"Precio en Pi",sellerWallet:"Billetera del Vendedor - Testnet",create:"Crear Contrato Inteligente Firmado",deposit:"Depositar en Custodia",release:"Liberar Pago",newDeal:"Nuevo Acuerdo",copyLink:"Copiar Enlace Firmado",blocked:"Acceso Denegado",blockedMsg:"Esta plataforma funciona exclusivamente dentro de Pi Browser"},
+    fr:{title:"Cortex Escrow V12.1",subtitle:"Protocole d'Escrow Décentralisé",login:"Se connecter avec Pi Protocol",dealType:"Type d'Accord",details:"Détails de l'Accord",terms:"Conditions de l'Accord",delivery:"Jours de Livraison",price:"Prix en Pi",sellerWallet:"Portefeuille Vendeur - Testnet",create:"Créer un Contrat Intelligent Signé",deposit:"Déposer en Séquestre",release:"Libérer le Paiement",newDeal:"Nouvel Accord",copyLink:"Copier le Lien Signé",blocked:"Accès Refusé",blockedMsg:"Cette plateforme fonctionne exclusivement dans Pi Browser"},
+    zh:{title:"Cortex Escrow V12.1",subtitle:"去中心化托管协议",login:"使用 Pi 协议登录",dealType:"交易类型",details:"交易详情",terms:"交易条款",delivery:"交货天数",price:"Pi 价格",sellerWallet:"卖家钱包 - 测试网",create:"创建已签名智能合约",deposit:"存入托管",release:"释放付款",newDeal:"新交易",copyLink:"复制签名链接",blocked:"访问被拒",blockedMsg:"此平台仅在 Pi 浏览器内运行"},
+    hi:{title:"Cortex Escrow V12.1",subtitle:"विकेंद्रीकृत एस्क्रो प्रोटोकॉल",login:"Pi प्रोटोकॉल से लॉगिन करें",dealType:"सौदे का प्रकार",details:"सौदे का विवरण",terms:"सौदे की शर्तें",delivery:"डिलीवरी दिन",price:"Pi में मूल्य",sellerWallet:"विक्रेता वॉलेट - टेस्टनेट",create:"हस्ताक्षरित स्मार्ट अनुबंध बनाएं",deposit:"एस्क्रो में जमा करें",release:"भुगतान जारी करें",newDeal:"नया सौदा",copyLink:"हस्ताक्षरित लिंक कॉपी करें",blocked:"प्रवेश निषेध",blockedMsg:"यह प्लेटफॉर्म केवल Pi ब्राउज़र में काम करता है"}
+};
+
+const LANGUAGES = ['ar','en','es','fr','zh','hi','ru','de','ja','pt','it','tr','ko','bn','ur','id','vi','th','fa','sw','ha','yo','ig','zu','af','sq','am','hy','az','eu','be','bs','bg','ca','ceb','ny','zh-CN','zh-TW','hr','cs','da','nl','eo','et','tl','fi','fy','gl','ka','el','gu','ht','hmn','hu','is','ga','jv','kn','kk','km','rw','ku','ky','lo','la','lv','lt','lb','mk','mg','ms','ml','mt','mi','mr','mn','my','ne','no','or','ps','pl','pa','ro','sm','gd','sr','st','sn','sd','si','sk','sl','so','su','sv','tg','ta','te','uk','uz','cy','xh','yi'];
+
+class CortexEscrow {
+    constructor(){
+        this.state = {user:null,contract:null,link:'',lang:'en',piReady:false};
+        this.init();
+    }
+
+    async init(){
+        this.setupLanguage();
+        if(!this.isPiBrowser()){
+            this.renderBlocked();
+            return;
+        }
+        await this.waitForPiSDK();
+        this.renderLogin();
+        this.bindEvents();
+    }
+
+    isPiBrowser(){
+        const ua = navigator.userAgent.toLowerCase();
+        return ua.includes('pibrowser') || ua.includes('pi network') || ua.includes('pi-browser') || ua.includes('pi_browser');
+    }
+
+    setupLanguage(){
+        const browserLang = navigator.language.split('-')[0];
+        this.state.lang = I18N[browserLang]? browserLang : 'en';
+        document.documentElement.lang = this.state.lang;
+        document.documentElement.dir = ['ar','fa','ur','he'].includes(this.state.lang)? 'rtl' : 'ltr';
+
+        const select = document.getElementById('langSelect');
+        LANGUAGES.slice(0,100).forEach(lang => {
+            const opt = document.createElement('option');
+            opt.value = lang;
+            opt.textContent = lang.toUpperCase();
+            if(lang === this.state.lang) opt.selected = true;
+            select.appendChild(opt);
+        });
+    }
+
+    t(key){
+        return (I18N[this.state.lang] && I18N[this.state.lang][key])
+           ? I18N[this.state.lang][key]
+            : I18N.en[key] || key;
+    }
+
+    async waitForPiSDK(){
+        let retries = 0;
+        while(typeof Pi === 'undefined' && retries < 30){
+            await new Promise(r => setTimeout(r, 100));
+            retries++;
+        }
+        if(typeof Pi === 'undefined') throw new Error('Pi SDK load timeout');
+        Pi.init({version:"2.0", sandbox:true, appId:CONFIG.APP_ID});
+        this.state.piReady = true;
+    }
+
+    renderBlocked(){
+        document.getElementById('app').innerHTML = `
+            <div class="blocked-screen">
+                <h1>🔒</h1>
+                <h2>${this.t('blocked')}</h2>
+                <p>${this.t('blockedMsg')}</p>
+                <p style="margin-top:16px;color:var(--muted)">افتح الرابط من تطبيق Pi Browser الرسمي</p>
+            </div>
+        `;
+    }
+
+    renderLogin(){
+        document.getElementById('app').innerHTML = `
+            <div class="container">
+                <h2>${this.t('title')}</h2>
+                <p class="subtitle">${this.t('subtitle')} - ${CONFIG.NETWORK.toUpperCase()}</p>
+                <button class="btn" id="loginBtn">🔐 ${this.t('login')}</button>
+                <div id="status"></div>
+            </div>
+        `;
+    }
+
+    renderApp(){
+        document.getElementById('app').innerHTML = `
+            <div class="container">
+                <h2>${this.t('title')}</h2>
+                <div class="user-card" id="userInfo"></div>
+
+                <label>${this.t('dealType')}</label>
+                <select id="dealType">
+                    <option value="digital">Digital Product</option>
+                    <option value="service">Service</option>
+                    <option value="physical">Physical Product</option>
+                </select>
+
+                <label>${this.t('details')}</label>
+                <textarea id="dealDetails" rows="3" placeholder="Detailed description with quality standards..."></textarea>
+
+                <div class="terms-box">
+                    <label>${this.t('terms')}</label>
+                    <textarea id="termsText" rows="2" placeholder="e.g., New product, 30-day warranty, inspection within 48h"></textarea>
+                    <label>${this.t('delivery')}</label>
+                    <input type="number" id="deliveryDays" value="7" min="1" max="90">
+                </div>
+
+                <label>${this.t('price')}</label>
+                <input type="number" id="dealAmount" step="0.0001" min="0.0001" max="100000">
+                <div id="feeBreakdown"></div>
+
+                <label>${this.t('sellerWallet')}</label>
+                <input type="text" id="sellerWallet" placeholder="G...56 characters">
+
+                <button class="btn" id="deployBtn">📝 ${this.t('create')}</button>
+                <button class="btn" id="depositBtn" style="display:none">💰 ${this.t('deposit')}</button>
+                <button class="btn" id="releaseBtn" style="display:none">🔓 ${this.t('release')}</button>
+                <button class="btn" id="newDealBtn">🔄 ${this.t('newDeal')}</button>
+
+                <div id="status"></div>
+                <div id="contractInfo"></div>
+                <div id="shareLink" class="link-box" style="display:none"></div>
+                <button class="btn" id="copyLinkBtn" style="display:none">📋 ${this.t('copyLink')}</button>
+            </div>
+        `;
+        this.updateUserInfo();
+    }
+
+    bindEvents(){
+        document.addEventListener('change', (e) => {
+            if(e.target.id === 'langSelect'){
+                this.state.lang = e.target.value;
+                document.documentElement.lang = this.state.lang;
+                document.documentElement.dir = ['ar','fa','ur','he'].includes(this.state.lang)? 'rtl' : 'ltr';
+                this.renderLogin();
+            }
+            if(e.target.id === 'dealAmount') this.updateFeeBreakdown();
+        });
+
+        document.addEventListener('click', (e) => {
+            if(e.target.id === 'loginBtn') this.handleLogin();
+            if(e.target.id === 'deployBtn') this.handleDeploy();
+            if(e.target.id === 'depositBtn') this.handleDeposit();
+            if(e.target.id === 'releaseBtn') this.handleRelease();
+            if(e.target.id === 'newDealBtn') this.resetState();
+            if(e.target.id === 'copyLinkBtn') this.copyLink();
+        });
+    }
+
+    async handleLogin(){
+        if(!this.state.piReady) return this.showStatus('Pi SDK not ready','err');
+        try{
+            this.showStatus('Authenticating via Pi Protocol...','warn');
+            const auth = await Pi.authenticate(['username','payments'], this.onIncompletePayment);
+            this.state.user = auth.user;
+            this.renderApp();
+            this.showStatus('✅ Connected successfully','ok');
+        }catch(err){
+            this.showStatus(`Auth failed: ${err.message}`,'err');
+        }
+    }
+
+    async handleDeploy(){
+        const deal = this.collectDealData();
+        if(!deal) return;
+
+        this.showStatus('Creating smart contract on Pi Network...','info');
+
+        try{
+            const res = await fetch(`${CONFIG.GENESIS_API}/genesis/deploy`,{
+                method:'POST',
+                headers:{'Content-Type':'application/json'},
+                body:JSON.stringify({
+                   ...deal,
+                    seller:this.state.user.uid,
+                    escrowAddress:CONFIG.ESCROW_ADDRESS,
+                    testnet:true,
+                    protocolVersion:CONFIG.VERSION,
