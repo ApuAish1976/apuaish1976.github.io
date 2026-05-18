@@ -1,0 +1,341 @@
+<!DOCTYPE html><html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#0a0a0f" />
+  <title>Cortex Escrow V12.5</title>  <script src="https://sdk.minepi.com/pi-sdk.js"></script>  <style>
+    :root{
+      --bg:#0a0a0f;
+      --card:#14141c;
+      --card2:#1e1e28;
+      --accent:#6c5ce7;
+      --accent2:#8b7cf6;
+      --success:#00d084;
+      --error:#ff4757;
+      --warn:#ffa502;
+      --text:#f1f2f6;
+      --muted:#9aa0ad;
+      --border:#2f3542;
+      --shadow:0 14px 40px rgba(0,0,0,.25);
+    }
+
+    *{box-sizing:border-box;margin:0;padding:0}
+
+    body{
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+      background:radial-gradient(circle at top,#1c1c32 0,#0a0a0f 42%,#07070b 100%);
+      color:var(--text);
+      padding:16px;
+      min-height:100vh;
+    }
+
+    .container{
+      max-width:760px;
+      margin:0 auto;
+      background:rgba(20,20,28,.96);
+      border:1px solid var(--border);
+      border-radius:18px;
+      padding:22px;
+      box-shadow:var(--shadow);
+    }
+
+    .topbar{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      margin-bottom:16px;
+    }
+
+    .brand{
+      display:flex;
+      align-items:center;
+      gap:10px;
+    }
+
+    .logo{
+      width:42px;
+      height:42px;
+      border-radius:14px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      background:linear-gradient(135deg,var(--accent),var(--accent2));
+      font-weight:800;
+      color:#fff;
+      box-shadow:0 10px 24px rgba(108,92,231,.25);
+    }
+
+    h1{font-size:20px;line-height:1.3}
+    h2{font-size:18px;margin:18px 0 10px}
+
+    .subtitle{color:var(--muted);font-size:13px;margin-top:2px}
+
+    .badge{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      border:1px solid rgba(108,92,231,.35);
+      background:rgba(108,92,231,.12);
+      color:#c9c3ff;
+      padding:7px 10px;
+      border-radius:999px;
+      font-size:12px;
+      white-space:nowrap;
+    }
+
+    .card{
+      background:var(--card2);
+      border:1px solid var(--border);
+      border-radius:14px;
+      padding:16px;
+      margin:14px 0;
+    }
+
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+
+    label{
+      display:block;
+      margin:13px 0 6px;
+      color:var(--muted);
+      font-size:13px;
+    }
+
+    input,select,textarea{
+      width:100%;
+      padding:12px 13px;
+      border-radius:10px;
+      border:1px solid var(--border);
+      background:#11111a;
+      color:var(--text);
+      font-size:15px;
+      outline:none;
+    }
+
+    input:focus,select:focus,textarea:focus{border-color:var(--accent)}
+    textarea{resize:vertical;min-height:82px}
+
+    .amount-wrap{
+      display:flex;
+      align-items:stretch;
+      direction:ltr;
+    }
+
+    .amount-wrap input{
+      border-radius:10px 0 0 10px;
+      direction:ltr;
+      text-align:left;
+    }
+
+    .currency-suffix{
+      min-width:58px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      background:#0f0f17;
+      border:1px solid var(--border);
+      border-left:0;
+      border-radius:0 10px 10px 0;
+      color:#d8d4ff;
+      font-weight:700;
+      user-select:none;
+    }
+
+    .hint{font-size:12px;color:var(--muted);margin-top:6px;line-height:1.6}
+
+    .btn{
+      width:100%;
+      border:0;
+      border-radius:12px;
+      padding:14px 18px;
+      margin:10px 0;
+      background:linear-gradient(135deg,var(--accent),var(--accent2));
+      color:#fff;
+      font-weight:800;
+      font-size:15px;
+      cursor:pointer;
+      transition:transform .12s ease,opacity .12s ease;
+    }
+
+    .btn:active{transform:scale(.99)}
+    .btn:disabled{opacity:.55;cursor:not-allowed}
+
+    .btn.secondary{background:#252538;color:#f1f2f6;border:1px solid var(--border)}
+    .btn.success{background:linear-gradient(135deg,#00a86b,#00d084)}
+    .btn.warn{background:linear-gradient(135deg,#d88900,#ffa502)}
+
+    .status{
+      padding:13px 14px;
+      border-radius:12px;
+      margin:12px 0;
+      font-size:14px;
+      line-height:1.6;
+      border-right:4px solid;
+      background:#11111a;
+      word-break:break-word;
+    }
+
+    .status.ok{border-color:var(--success);color:var(--success);background:rgba(0,208,132,.1)}
+    .status.err{border-color:var(--error);color:#ff9aa5;background:rgba(255,71,87,.1)}
+    .status.warn{border-color:var(--warn);color:#ffd28a;background:rgba(255,165,2,.1)}
+    .status.info{border-color:var(--accent);color:#c9c3ff;background:rgba(108,92,231,.12)}
+
+    .fee-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+    .fee-item{background:#11111a;border:1px solid var(--border);padding:12px;border-radius:12px;font-size:12px;color:var(--muted)}
+    .fee-item strong{display:block;color:#fff;font-size:16px;margin-top:4px;direction:ltr;text-align:left}
+
+    .link-box{
+      direction:ltr;
+      text-align:left;
+      word-break:break-all;
+      background:#0f0f17;
+      border:1px dashed var(--border);
+      padding:12px;
+      border-radius:12px;
+      font-family:ui-monospace,SFMono-Regular,Consolas,monospace;
+      font-size:12px;
+      margin-top:10px;
+      color:#d7d7e6;
+    }
+
+    .kv{display:grid;grid-template-columns:130px 1fr;gap:8px;font-size:13px;line-height:1.7;margin:5px 0}
+    .kv span:first-child{color:var(--muted)}
+    .ltr{direction:ltr;text-align:left;word-break:break-all}
+    .hidden{display:none!important}
+
+    .footer{
+      display:flex;
+      flex-wrap:wrap;
+      justify-content:center;
+      gap:12px;
+      margin-top:18px;
+      color:var(--muted);
+      font-size:12px;
+    }
+
+    .footer a{color:#c9c3ff;text-decoration:none}
+
+    @media (max-width:620px){
+      body{padding:10px}
+      .container{padding:16px;border-radius:16px}
+      .topbar{align-items:flex-start}
+      .grid,.fee-grid{grid-template-columns:1fr}
+      .kv{grid-template-columns:1fr}
+    }
+  </style></head>
+<body>
+  <div class="container">
+    <div class="topbar">
+      <div class="brand">
+        <div class="logo">Pi</div>
+        <div>
+          <h1>Cortex Escrow</h1>
+          <div class="subtitle">Pi Testnet Escrow Demo · V12.5</div>
+        </div>
+      </div>
+      <div class="badge">TESTNET</div>
+    </div><div id="backendStatus" class="status info">جاري فحص اتصال الباكند...</div>
+<div id="authBox" class="card"></div>
+<div id="app"></div>
+
+<div class="footer">
+  <a href="terms.html" target="_blank" rel="noopener">Terms</a>
+  <span>·</span>
+  <a href="privacy.html" target="_blank" rel="noopener">Privacy</a>
+  <span>·</span>
+  <span>Currency: Pi</span>
+</div>
+
+  </div>  <script>
+    "use strict";
+
+    const CONFIG = {
+      BACKEND_URL: "https://pi-backend-kv9g.onrender.com",
+      APP_ID: "24f0d30e-9254-4936-9425-751c825c4aea",
+      NETWORK: "testnet",
+      SANDBOX: true,
+      VERSION: "12.5.0",
+      CURRENCY_LABEL: "Pi",
+      MAX_DECIMALS: 7,
+      PI_FACTOR: 10000000,
+      MIN_AMOUNT: "0.0000001",
+      MAX_AMOUNT: "100000"
+    };
+
+    class CortexEscrowApp {
+      constructor() {
+        this.state = {
+          piReady: false,
+          authenticated: false,
+          auth: null,
+          user: null,
+          currentDeal: null,
+          currentDealId: null,
+          mode: "seller"
+        };
+
+        this.els = {
+          backendStatus: document.getElementById("backendStatus"),
+          authBox: document.getElementById("authBox"),
+          app: document.getElementById("app")
+        };
+
+        this.init();
+      }
+
+      async init() {
+        this.state.mode = this.getDealIdFromUrl() ? "buyer" : "seller";
+        this.renderAuthBox();
+        this.renderMain();
+        this.checkBackend();
+        await this.initPiSdk();
+        this.renderAuthBox();
+
+        const dealId = this.getDealIdFromUrl();
+        if (dealId) {
+          await this.loadDeal(dealId);
+        }
+      }
+
+      async initPiSdk() {
+        const sdkLoaded = await this.waitForPiSdk();
+        if (!sdkLoaded) {
+          this.state.piReady = false;
+          this.showAuthMessage("لم يتم العثور على Pi SDK. افتح التطبيق من Pi Browser أو Sandbox.", "warn");
+          return;
+        }
+
+        try {
+          window.Pi.init({ version: "2.0", sandbox: CONFIG.SANDBOX });
+          this.state.piReady = true;
+        } catch (err) {
+          this.state.piReady = false;
+          this.showAuthMessage("تعذر تهيئة Pi SDK: " + this.cleanError(err), "err");
+        }
+      }
+
+      waitForPiSdk() {
+        return new Promise((resolve) => {
+          let tries = 0;
+          const timer = setInterval(() => {
+            tries += 1;
+            if (window.Pi) {
+              clearInterval(timer);
+              resolve(true);
+            }
+            if (tries >= 40) {
+              clearInterval(timer);
+              resolve(false);
+            }
+          }, 100);
+        });
+      }
+
+      async checkBackend() {
+        try {
+          const data = await this.apiGet("/api/health");
+          this.els.backendStatus.className = "status ok";
+          this.els.backendStatus.textContent = `✅ الباكند يعمل · ${data.app || "Cortex Escrow"} · ${data.network || "PI_TESTNET"} · العملة ${data.currency || CONFIG.CURRENCY_LABEL}`;
+        } catch (err) {
+          this.els.backendStatus.className = "status warn";
+          this.els.backendStatus.textContent = "⚠️ لم يتم تأكيد اتصال الباكند الآن. إذا كان Render يستيقظ من الخ
