@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0a0a0f" />
+  <meta name="referrer" content="no-referrer" />
+  <meta http-equiv="Content-Security-Policy" content="
+    default-src 'self';
+    script-src 'self' 'unsafe-inline' https://sdk.minepi.com https://*.minepi.com;
+    connect-src 'self' https://pi-backend-kv9g.onrender.com https://api.minepi.com https://*.minepi.com;
+    img-src 'self' data: https://*.minepi.com;
+    style-src 'self' 'unsafe-inline';
+    frame-src 'self' https://minepi.com https://*.minepi.com;
+    frame-ancestors 'self' https://minepi.com https://*.minepi.com;
+    object-src 'none';
+    base-uri 'self';
+    form-action 'self';
+    upgrade-insecure-requests
+  " />
+
+  <title>Cortex Escrow Deal V12.8</title>
+  <script src="https://sdk.minepi.com/pi-sdk.js"></script>
+
+  <style>
+    :root {
+      --bg: #0a0a0f;
+      --bg2: #10101a;
+      --card: rgba(20, 20, 30, .94);
+      --card2: rgba(28, 28, 42, .94);
+      --accent: #7c6cff;
+      --accent2: #22d3ee;
+      --success: #00d084;
+      --error: #ff4757;
+      --warn: #ffa502;
+      --text: #f1f2f6;
+      --muted: #a4adba;
+      --border: rgba(255,255,255,.12);
+      --shadow: 0 18px 55px rgba(0,0,0,.35);
+      --radius: 18px;
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      min-height: 100vh;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Tahoma, Arial, sans-serif;
+      background:
+        radial-gradient(circle at top right, rgba(124,108,255,.20), transparent 35%),
+        radial-gradient(circle at bottom left, rgba(34,211,238,.12), transparent 35%),
+        linear-gradient(135deg, var(--bg), var(--bg2));
+      color: var(--text);
+      padding: 16px 12px calc(18px + var(--safe-bottom));
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    button,
+    select {
+      font: inherit;
+    }
+
+    .app {
+      width: min(980px, 100%);
+      margin: 0 auto;
+    }
+
+    .hero {
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      background: linear-gradient(135deg, rgba(124,108,255,.14), rgba(34,211,238,.08));
+      box-shadow: var(--shadow);
+      padding: 18px;
+      margin-bottom: 14px;
+    }
+
+    .brand-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .brand {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .logo {
+      width: 48px;
+      height: 48px;
+      display: grid;
+      place-items: center;
+      border-radius: 16px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: white;
+      font-weight: 900;
+      letter-spacing: .5px;
+      box-shadow: 0 12px 28px rgba(124,108,255,.28);
+    }
+
+    h1 {
+      font-size: clamp(1.45rem, 4vw, 2.2rem);
+      line-height: 1.1;
+    }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: .92rem;
+      margin-top: 5px;
+      line-height: 1.6;
+    }
+
+    .top-tools {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,.07);
+      color: var(--text);
+      padding: 7px 10px;
+      font-size: .78rem;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .badge.ok {
+      color: #cbffdf;
+      background: rgba(0,208,132,.14);
+      border-color: rgba(0,208,132,.35);
+    }
+
+    .badge.warn {
+      color: #ffe3a9;
+      background: rgba(255,165,2,.14);
+      border-color: rgba(255,165,2,.35);
+    }
+
+    .badge.err {
+      color: #ffd2d6;
+      background: rgba(255,71,87,.14);
+      border-color: rgba(255,71,87,.35);
+    }
+
+    select {
+      color: var(--text);
+      background: rgba(255,255,255,.07);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 8px 10px;
+      outline: none;
+    }
+
+    .notice {
+      margin-top: 14px;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      background: rgba(255,255,255,.06);
+      padding: 12px;
+      color: var(--muted);
+      line-height: 1.7;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .notice.ok {
+      color: #cbffdf;
+      background: rgba(0,208,132,.10);
+      border-color: rgba(0,208,132,.28);
+    }
+
+    .notice.warn {
+      color: #ffe3a9;
+      background: rgba(255,165,2,.10);
+      border-color: rgba(255,165,2,.28);
+    }
+
+    .notice.err {
+      color: #ffd2d6;
+      background: rgba(255,71,87,.10);
+      border-color: rgba(255,71,87,.28);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.25fr) minmax(290px, .75fr);
+      gap: 14px;
+    }
+
+    .card {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--card);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .card-header {
+      padding: 16px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(255,255,255,.035);
+    }
+
+    .card-title {
+      font-size: 1.05rem;
+      font-weight: 900;
+    }
+
+    .card-body {
+      padding: 16px;
+    }
+
+    .deal-title {
+      font-size: clamp(1.25rem, 4vw, 1.8rem);
+      font-weight: 900;
+      margin-bottom: 8px;
+      line-height: 1.25;
+      word-break: break-word;
+    }
+
+    .amount-box {
+      margin: 14px 0;
+      border: 1px solid rgba(124,108,255,.38);
+      border-radius: 18px;
+      background: linear-gradient(135deg, rgba(124,108,255,.16), rgba(34,211,238,.08));
+      padding: 16px;
+      text-align: center;
+    }
+
+    .amount {
+      direction: ltr;
+      font-size: clamp(2rem, 9vw, 3.5rem);
+      font-weight: 950;
+      letter-spacing: -.04em;
+    }
+
+    .currency {
+      display: inline-block;
+      margin-inline-start: 6px;
+      color: #d9d4ff;
+      font-weight: 900;
+      font-size: 1.1rem;
+    }
+
+    .details {
+      display: grid;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .detail-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 10px 0;
+      border-bottom: 1px solid rgba(255,255,255,.08);
+    }
+
+    .detail-row:last-child {
+      border-bottom: 0;
+    }
+
+    .key {
+      color: var(--muted);
+      font-size: .86rem;
+      flex: 0 0 auto;
+    }
+
+    .value {
+      font-weight: 800;
+      text-align: end;
+      word-break: break-word;
+    }
+
+    .description {
+      margin-top: 14px;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: rgba(255,255,255,.045);
+      color: var(--muted);
+      line-height: 1.7;
+      word-break: break-word;
+    }
+
+    .actions {
+      display: grid;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .btn {
+      width: 100%;
+      min-height: 48px;
+      border: 0;
+      border-radius: 14px;
+      padding: 12px 14px;
+      color: white;
+      font-weight: 900;
+      cursor: pointer;
+      transition: transform .12s ease, opacity .12s ease, filter .12s ease;
+    }
+
+    .btn:active {
+      transform: scale(.985);
+    }
+
+    .btn:disabled {
+      cursor: not-allowed;
+      opacity: .55;
+      filter: grayscale(.2);
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent), #9b5cff);
+    }
+
+    .btn-success {
+      background: linear-gradient(135deg, #00b875, #00d084);
+    }
+
+    .btn-ghost {
+      background: rgba(255,255,255,.08);
+      border: 1px solid var(--border);
+    }
+
+    .btn-danger {
+      background: linear-gradient(135deg, #ff4757, #ff6b81);
+    }
+
+    .status-box {
+      display: grid;
+      gap: 8px;
+    }
+
+    .status-line {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      border-bottom: 1px solid rgba(255,255,255,.08);
+      padding: 9px 0;
+    }
+
+    .status-line:last-child {
+      border-bottom: 0;
+    }
+
+    .log {
+      margin-top: 12px;
+      display: grid;
+      gap: 8px;
+      max-height: 260px;
+      overflow: auto;
+    }
+
+    .log-item {
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: 12px;
+      background: rgba(255,255,255,.045);
+      padding: 9px;
+      color: var(--muted);
+      font-size: .82rem;
+      line-height: 1.5;
+      direction: ltr;
+      text-align: left;
+      word-break: break-word;
+    }
+
+    .log-time {
+      display: block;
+      color: #d9d4ff;
+      font-weight: 900;
+      margin-bottom: 4px;
+    }
+
+    .spinner {
+      width: 16px;
+      height: 16px;
+      display: none;
+      border: 2px solid rgba(255,255,255,.35);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin .8s linear infinite;
+      margin-inline-end: 8px;
+      vertical-align: -3px;
+    }
+
+    .busy .spinner {
+      display: inline-block;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .footer {
+      margin-top: 14px;
+      color: var(--muted);
+      text-align: center;
+      font-size: .84rem;
+    }
+
+    .noscript {
+      width: min(980px, 100%);
+      margin: 0 auto 14px;
+      border-radius: 16px;
+      border: 1px solid rgba(255,71,87,.35);
+      background: rgba(255,71,87,.10);
+      color: #ffd2d6;
+      padding: 12px;
+      text-align: center;
+      font-weight: 800;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    @media (max-width: 790px) {
+      body {
+        padding: 10px 10px calc(16px + var(--safe-bottom));
+      }
+
+      .grid {
+        grid-template-columns: 1fr;
+      }
+
+      .brand-row {
+        align-items: flex-start;
+      }
+
+      .top-tools {
+        width: 100%;
+      }
+
+      select {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <noscript>
+    <div class="noscript">JavaScript غير مفعل. يجب تفعيل JavaScript حتى تعمل صفحة الصفقة.</div>
+  </noscript>
+
+  <main class="app">
+    <section class="hero">
+      <div class="brand-row">
+        <div class="brand">
+          <div class="logo" aria-hidden="true">Pi</div>
+          <div>
+            <h1>Cortex Escrow</h1>
+            <p class="subtitle" data-i18n="subtitle">صفحة دفع صفقة ضمان · Pi Testnet · V12.8</p>
+          </div>
+        </div>
+
+        <div class="top-tools">
+          <span class="badge warn">TESTNET</span>
+          <span class="badge ok">Currency: Pi</span>
+          <select id="language" aria-label="Language">
+            <option value="ar">العربية</option>
+            <option value="en">English</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="notice warn" data-i18n="testnetNotice">
+        هذه صفحة Testnet للتجربة. لا تعتبر الصفقة مكتملة إلا بعد تأكيد الباكند لعملية Pi Payment.
+      </div>
+    </section>
+
+    <section class="grid">
+      <article class="card">
+        <div class="card-header">
+          <div class="card-title" data-i18n="dealCardTitle">تفاصيل الصفقة</div>
+          <p class="subtitle" data-i18n="dealCardSubtitle">راجع بيانات الصفقة ثم ادفع عبر Pi Browser.</p>
+        </div>
+
+        <div class="card-body">
+          <div id="loadingBox" class="notice" data-i18n="loading">جاري تحميل الصفقة...</div>
+
+          <div id="dealBox" class="hidden">
+            <div id="dealTitle" class="deal-title">-</div>
+
+            <div class="amount-box">
+              <span id="dealAmount" class="amount">-</span>
+              <span class="currency">Pi</span>
+            </div>
+
+            <div id="dealDescription" class="description hidden"></div>
+
+            <div class="details">
+              <div class="detail-row">
+                <span class="key">Deal ID</span>
+                <span id="dealIdView" class="value">-</span>
+              </div>
+
+              <div class="detail-row">
+                <span class="key" data-i18n="seller">البائع</span>
+                <span id="sellerView" class="value">-</span>
+              </div>
+
+              <div class="detail-row">
+                <span class="key" data-i18n="status">الحالة</span>
+                <span id="dealStatusView" class="value">-</span>
+              </div>
+            </div>
+
+            <div class="actions">
+              <button id="loginBtn" type="button" class="btn btn-ghost">
+                <span class="spinner" aria-hidden="true"></span>
+                <span data-i18n="loginPi">تسجيل الدخول Pi</span>
+              </button>
+
+              <button id="payBtn" type="button" class="btn btn-primary" disabled>
+                <span class="spinner" aria-hidden="true"></span>
+                <span data-i18n="payNow">ادفع الآن بأمان</span>
+              </button>
+
+              <button id="cancelBtn" type="button" class="btn btn-danger hidden">
+                <span class="spinner" aria-hidden="true"></span>
+                <span data-i18n="cancelPayment">إلغاء الدفع</span>
+              </button>
+
+              <button id="reloadBtn" type="button" class="btn btn-ghost">
+                <span data-i18n="reloadDeal">إعادة تحميل الصفقة</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <aside class="card">
+        <div class="card-header">
+          <div class="card-title" data-i18n="connectionTitle">حالة الربط</div>
+          <p class="subtitle" data-i18n="connectionSubtitle">فحص الباكند ونتيجة الدفع.</p>
+        </div>
+
+        <div class="card-body">
+          <div class="status-box">
+            <div class="status-line">
+              <span class="key">Backend</span>
+              <span id="backendView" class="value">-</span>
+            </div>
+
+            <div class="status-line">
+              <span class="key">Pi User</span>
+              <span id="userView" class="value" data-i18n="notLoggedIn">غير مسجل</span>
+            </div>
+
+            <div class="status-line">
+              <span class="key">Payment ID</span>
+              <span id="paymentView" class="value">-</span>
+            </div>
+
+            <div class="status-line">
+              <span class="key">TXID</span>
+              <span id="txView" class="value">-</span>
+            </div>
+          </div>
+
+          <div id="resultBox" class="notice" data-i18n="ready">
+            الصفحة جاهزة. العملة ثابتة Pi والدفع يعمل عبر Pi Testnet.
+          </div>
+
+          <div id="logBox" class="log" aria-live="polite"></div>
+        </div>
+      </aside>
+    </section>
+
+    <p class="footer">
+      <a href="index.html">Home</a> ·
+      <a href="terms.html">Terms</a> ·
+      <a href="privacy.html">Privacy</a> ·
+      Cortex Escrow Deal V12.8
+    </p>
+  </main>
+
+  <script>
+    'use strict';
+
+    const CONFIG = Object.freeze({
+      APP_NAME: 'Cortex Escrow',
+      VERSION: '12.8.0-deal',
+      BACKEND_URL: 'https://pi-backend-kv9g.onrender.com',
+      SDK_VERSION: '2.0',
+      SANDBOX: true,
+      PI_DECIMALS: 7,
+      MIN_AMOUNT: 0.0000001,
+      MAX_AMOUNT: 100000,
+      REQUEST_TIMEOUT_MS: 20000
+    });
+
+    const I18N = {
+      ar: {
+        subtitle: 'صفحة دفع صفقة ضمان · Pi Testnet · V12.8',
+        testnetNotice: 'هذه صفحة Testnet للتجربة. لا تعتبر الصفقة مكتملة إلا بعد تأكيد الباكند لعملية Pi Payment.',
+        dealCardTitle: 'تفاصيل الصفقة',
+        dealCardSubtitle: 'راجع بيانات الصفقة ثم ادفع عبر Pi Browser.',
+        loading: 'جاري تحميل الصفقة...',
+        seller: 'البائع',
+        status: 'الحالة',
+        loginPi: 'تسجيل الدخول Pi',
+        payNow: 'ادفع الآن بأمان',
+        cancelPayment: 'إلغاء الدفع',
+        reloadDeal: 'إعادة تحميل الصفقة',
+        connectionTitle: 'حالة الربط',
+        connectionSubtitle: 'فحص الباكند ونتيجة الدفع.',
+        notLoggedIn: 'غير مسجل',
+        ready: 'الصفحة جاهزة. العملة ثابتة Pi والدفع يعمل عبر Pi Testnet.',
+        backendOk: 'الباكند متصل',
+        backendFail: 'الباكند لا يرد',
+        noPiSdk: 'لم يتم العثور على Pi SDK. افتح الصفحة من Pi Browser.',
+        loginOk: 'تم تسجيل الدخول بنجاح.',
+        loginFail: 'فشل تسجيل الدخول عبر Pi.',
+        dealLoaded: 'تم تحميل الصفقة.',
+        dealNotFound: 'لم يتم العثور على بيانات الصفقة. تأكد أن الرابط يحتوي dealId أو id.',
+        invalidAmount: 'مبلغ الصفقة غير صالح. يجب أن يكون من 0.0000001 إلى 100000 وبحد أقصى 7 أرقام عشرية.',
+        notPayable: 'هذه الصفقة ليست في حالة تسمح بالدفع.',
+        paymentStarted: 'تم بدء عملية الدفع.',
+        approvalSent: 'تم إرسال طلب اعتماد
