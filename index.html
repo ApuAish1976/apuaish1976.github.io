@@ -1440,5 +1440,632 @@ ${terms}`
 
     document.addEventListener('DOMContentLoaded', boot);
   </script>
-</body>
+<!-- =========================================================
+Cortex Escrow V13.0 Stage 4 Safe Polish
+Safe UI-only layer:
+- No backend route changes
+- No Pi SDK changes
+- No Pi.authenticate / Allow changes
+- No payment logic changes
+- No deal creation logic changes
+========================================================= -->
+
+<style id="cortex-stage4-safe-polish-style">
+  .ctx-stage4-panel {
+    margin-top: 18px;
+    padding: 16px;
+    border: 1px solid rgba(148, 163, 184, 0.35);
+    border-radius: 18px;
+    background:
+      radial-gradient(circle at top left, rgba(34, 197, 94, 0.12), transparent 38%),
+      radial-gradient(circle at bottom right, rgba(59, 130, 246, 0.10), transparent 42%),
+      rgba(15, 23, 42, 0.72);
+    box-shadow: 0 14px 35px rgba(0, 0, 0, 0.22);
+  }
+
+  .ctx-stage4-panel h3 {
+    margin: 0 0 8px;
+    font-size: 18px;
+    color: #f8fafc;
+  }
+
+  .ctx-stage4-panel p {
+    margin: 6px 0;
+    color: #cbd5e1;
+    line-height: 1.7;
+    font-size: 14px;
+  }
+
+  .ctx-stage4-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+    margin-top: 12px;
+  }
+
+  @media (min-width: 760px) {
+    .ctx-stage4-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  .ctx-stage4-box {
+    padding: 12px;
+    border-radius: 14px;
+    border: 1px solid rgba(148, 163, 184, 0.26);
+    background: rgba(2, 6, 23, 0.42);
+  }
+
+  .ctx-stage4-label {
+    display: block;
+    margin-bottom: 7px;
+    color: #e2e8f0;
+    font-weight: 700;
+    font-size: 13px;
+  }
+
+  .ctx-stage4-input,
+  .ctx-stage4-textarea,
+  .ctx-stage4-select {
+    width: 100%;
+    box-sizing: border-box;
+    border: 1px solid rgba(148, 163, 184, 0.35);
+    border-radius: 12px;
+    padding: 10px 12px;
+    background: rgba(15, 23, 42, 0.72);
+    color: #f8fafc;
+    outline: none;
+    font-size: 14px;
+  }
+
+  .ctx-stage4-textarea {
+    min-height: 86px;
+    resize: vertical;
+  }
+
+  .ctx-stage4-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 10px;
+  }
+
+  .ctx-stage4-btn {
+    border: 0;
+    border-radius: 999px;
+    padding: 9px 13px;
+    cursor: pointer;
+    font-weight: 800;
+    color: #06121f;
+    background: linear-gradient(135deg, #facc15, #22c55e);
+    box-shadow: 0 10px 22px rgba(34, 197, 94, 0.16);
+  }
+
+  .ctx-stage4-btn.secondary {
+    color: #e2e8f0;
+    background: rgba(30, 41, 59, 0.95);
+    border: 1px solid rgba(148, 163, 184, 0.28);
+  }
+
+  .ctx-stage4-btn:active {
+    transform: translateY(1px);
+  }
+
+  .ctx-stage4-note {
+    margin-top: 10px;
+    padding: 10px 12px;
+    border-radius: 13px;
+    color: #fde68a;
+    background: rgba(120, 53, 15, 0.28);
+    border: 1px solid rgba(251, 191, 36, 0.22);
+    font-size: 13px;
+    line-height: 1.7;
+  }
+
+  .ctx-stage4-ok {
+    color: #bbf7d0;
+  }
+
+  .ctx-stage4-muted {
+    color: #94a3b8;
+    font-size: 13px;
+  }
+
+  .ctx-stage4-toast {
+    position: fixed;
+    left: 50%;
+    bottom: 22px;
+    transform: translateX(-50%);
+    z-index: 999999;
+    max-width: calc(100vw - 28px);
+    padding: 11px 15px;
+    border-radius: 999px;
+    background: rgba(15, 23, 42, 0.96);
+    color: #f8fafc;
+    border: 1px solid rgba(148, 163, 184, 0.35);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.28);
+    font-weight: 800;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.18s ease, bottom 0.18s ease;
+  }
+
+  .ctx-stage4-toast.show {
+    opacity: 1;
+    bottom: 30px;
+  }
+</style>
+
+<script id="cortex-stage4-safe-polish-script">
+(function () {
+  "use strict";
+
+  var STAGE4_VERSION_TEXT = "Cortex Escrow V13.0 Stage 4 · Pi Testnet";
+
+  function qs(selector, root) {
+    return (root || document).querySelector(selector);
+  }
+
+  function qsa(selector, root) {
+    return Array.prototype.slice.call((root || document).querySelectorAll(selector));
+  }
+
+  function safeText(value) {
+    return String(value || "").trim();
+  }
+
+  function toast(message) {
+    var box = qs("#ctxStage4Toast");
+    if (!box) {
+      box = document.createElement("div");
+      box.id = "ctxStage4Toast";
+      box.className = "ctx-stage4-toast";
+      document.body.appendChild(box);
+    }
+
+    box.textContent = message;
+    box.classList.add("show");
+
+    window.clearTimeout(window.__ctxStage4ToastTimer);
+    window.__ctxStage4ToastTimer = window.setTimeout(function () {
+      box.classList.remove("show");
+    }, 1800);
+  }
+
+  function copyText(text, successMessage) {
+    text = safeText(text);
+
+    if (!text) {
+      toast("لا يوجد نص للنسخ");
+      return;
+    }
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function () {
+        toast(successMessage || "تم النسخ");
+      }).catch(function () {
+        fallbackCopy(text, successMessage);
+      });
+    } else {
+      fallbackCopy(text, successMessage);
+    }
+  }
+
+  function fallbackCopy(text, successMessage) {
+    var temp = document.createElement("textarea");
+    temp.value = text;
+    temp.setAttribute("readonly", "readonly");
+    temp.style.position = "fixed";
+    temp.style.left = "-9999px";
+    document.body.appendChild(temp);
+    temp.select();
+
+    try {
+      document.execCommand("copy");
+      toast(successMessage || "تم النسخ");
+    } catch (e) {
+      toast("تعذر النسخ تلقائياً");
+    }
+
+    document.body.removeChild(temp);
+  }
+
+  function getValueFromPossibleFields(selectors) {
+    for (var i = 0; i < selectors.length; i++) {
+      var el = qs(selectors[i]);
+      if (!el) continue;
+
+      if (typeof el.value !== "undefined" && safeText(el.value)) {
+        return safeText(el.value);
+      }
+
+      if (safeText(el.textContent)) {
+        return safeText(el.textContent);
+      }
+    }
+
+    return "";
+  }
+
+  function findPublicDealUrl() {
+    var direct = getValueFromPossibleFields([
+      "#publicDealUrl",
+      "#dealPublicUrl",
+      "#dealLink",
+      "#shareDealUrl",
+      "#shareUrl",
+      "input[name='publicDealUrl']",
+      "textarea[name='publicDealUrl']"
+    ]);
+
+    if (direct) return direct;
+
+    var readonlyFields = qsa("input[readonly], textarea[readonly]");
+    for (var i = 0; i < readonlyFields.length; i++) {
+      var v = safeText(readonlyFields[i].value);
+      if (v.indexOf("http://") === 0 || v.indexOf("https://") === 0) {
+        return v;
+      }
+    }
+
+    return window.location.href;
+  }
+
+  function findShareText() {
+    var direct = getValueFromPossibleFields([
+      "#shareText",
+      "#dealShareText",
+      "#publicShareText",
+      "textarea[name='shareText']",
+      "input[name='shareText']"
+    ]);
+
+    if (direct) return direct;
+
+    var url = findPublicDealUrl();
+
+    return [
+      "صفقة ضمان عبر Cortex Escrow",
+      "الشبكة: Pi Testnet",
+      "رابط الصفقة:",
+      url
+    ].join("\n");
+  }
+
+  function findDealId() {
+    var direct = getValueFromPossibleFields([
+      "#dealId",
+      "#contractId",
+      "#dealIdValue",
+      "#contractIdValue",
+      "#createdDealId",
+      "#resultDealId"
+    ]);
+
+    if (direct) return direct;
+
+    var bodyText = safeText(document.body.textContent);
+    var match = bodyText.match(/CTX_TESTNET_[A-Za-z0-9_]+/);
+    return match ? match[0] : "";
+  }
+
+  function openShare() {
+    var shareText = findShareText();
+    var dealUrl = findPublicDealUrl();
+
+    if (navigator.share) {
+      navigator.share({
+        title: "Cortex Escrow",
+        text: shareText,
+        url: dealUrl
+      }).catch(function () {
+        copyText(shareText, "تم نسخ نص المشاركة");
+      });
+    } else {
+      copyText(shareText, "تم نسخ نص المشاركة");
+    }
+  }
+
+  function buildTrackingUrl(carrier, trackingNumber) {
+    carrier = safeText(carrier);
+    trackingNumber = safeText(trackingNumber);
+
+    if (!trackingNumber) return "";
+
+    if (carrier === "dhl") {
+      return "https://www.dhl.com/global-en/home/tracking.html?tracking-id=" + encodeURIComponent(trackingNumber);
+    }
+
+    if (carrier === "fedex") {
+      return "https://www.fedex.com/fedextrack/?trknbr=" + encodeURIComponent(trackingNumber);
+    }
+
+    if (carrier === "ups") {
+      return "https://www.ups.com/track?tracknum=" + encodeURIComponent(trackingNumber);
+    }
+
+    if (carrier === "aramex") {
+      return "https://www.aramex.com/track/results?ShipmentNumber=" + encodeURIComponent(trackingNumber);
+    }
+
+    return trackingNumber;
+  }
+
+  function saveStage4Data() {
+    var dealId = findDealId() || "current";
+    var carrier = qs("#ctxStage4Carrier");
+    var tracking = qs("#ctxStage4TrackingNumber");
+    var trackingUrl = qs("#ctxStage4TrackingUrl");
+    var note = qs("#ctxStage4ShipmentNote");
+
+    var payload = {
+      carrier: carrier ? carrier.value : "",
+      trackingNumber: tracking ? tracking.value : "",
+      trackingUrl: trackingUrl ? trackingUrl.value : "",
+      shipmentNote: note ? note.value : "",
+      savedAt: new Date().toISOString()
+    };
+
+    try {
+      localStorage.setItem("ctx_stage4_shipping_" + dealId, JSON.stringify(payload));
+      toast("تم حفظ بيانات الشحن محلياً");
+    } catch (e) {
+      toast("تعذر الحفظ المحلي");
+    }
+  }
+
+  function loadStage4Data() {
+    var dealId = findDealId() || "current";
+
+    try {
+      var raw = localStorage.getItem("ctx_stage4_shipping_" + dealId);
+      if (!raw) return;
+
+      var data = JSON.parse(raw);
+
+      if (qs("#ctxStage4Carrier")) qs("#ctxStage4Carrier").value = data.carrier || "custom";
+      if (qs("#ctxStage4TrackingNumber")) qs("#ctxStage4TrackingNumber").value = data.trackingNumber || "";
+      if (qs("#ctxStage4TrackingUrl")) qs("#ctxStage4TrackingUrl").value = data.trackingUrl || "";
+      if (qs("#ctxStage4ShipmentNote")) qs("#ctxStage4ShipmentNote").value = data.shipmentNote || "";
+    } catch (e) {}
+  }
+
+  function refreshTrackingUrl() {
+    var carrier = qs("#ctxStage4Carrier");
+    var tracking = qs("#ctxStage4TrackingNumber");
+    var trackingUrl = qs("#ctxStage4TrackingUrl");
+
+    if (!carrier || !tracking || !trackingUrl) return;
+
+    var nextUrl = buildTrackingUrl(carrier.value, tracking.value);
+
+    if (nextUrl && carrier.value !== "custom") {
+      trackingUrl.value = nextUrl;
+    }
+  }
+
+  function openTrackingUrl() {
+    var trackingUrl = qs("#ctxStage4TrackingUrl");
+    var value = trackingUrl ? safeText(trackingUrl.value) : "";
+
+    if (!value) {
+      toast("أدخل رابط أو رقم التتبع أولاً");
+      return;
+    }
+
+    if (value.indexOf("http://") === 0 || value.indexOf("https://") === 0) {
+      window.open(value, "_blank", "noopener,noreferrer");
+      return;
+    }
+
+    toast("هذا ليس رابطاً مباشراً، تم نسخه بدلاً من فتحه");
+    copyText(value, "تم نسخ رقم التتبع");
+  }
+
+  function updateVersionLabels() {
+    try {
+      if (document.title && document.title.indexOf("Cortex Escrow") !== -1) {
+        document.title = STAGE4_VERSION_TEXT;
+      }
+
+      var all = qsa("body *");
+      all.forEach(function (el) {
+        if (!el || !el.childNodes || el.childNodes.length !== 1) return;
+
+        var txt = safeText(el.textContent);
+        if (!txt) return;
+
+        if (
+          txt.indexOf("Cortex Escrow V13.0 Stage 3") !== -1 ||
+          txt.indexOf("Cortex Escrow V13.0 Stage 2") !== -1 ||
+          txt.indexOf("V13.0 Stage 3") !== -1 ||
+          txt.indexOf("V13.0 Stage 2") !== -1
+        ) {
+          el.textContent = txt
+            .replace("Cortex Escrow V13.0 Stage 3 · Pi Testnet", STAGE4_VERSION_TEXT)
+            .replace("Cortex Escrow V13.0 Stage 2 · Pi Testnet", STAGE4_VERSION_TEXT)
+            .replace("V13.0 Stage 3", "V13.0 Stage 4")
+            .replace("V13.0 Stage 2", "V13.0 Stage 4");
+        }
+      });
+    } catch (e) {}
+  }
+
+  function findBestInsertTarget() {
+    var known = qs("#showDisputePageBtn") ||
+                qs("#publicDealUrl") ||
+                qs("#shareText") ||
+                qs("#dealResult") ||
+                qs("#resultBox") ||
+                qs("#createResult") ||
+                qs("main") ||
+                qs(".container") ||
+                document.body;
+
+    if (known && known.parentElement && known !== document.body) {
+      return known.parentElement;
+    }
+
+    return known;
+  }
+
+  function createStage4Panel() {
+    if (qs("#ctxStage4Panel")) return;
+
+    var panel = document.createElement("section");
+    panel.id = "ctxStage4Panel";
+    panel.className = "ctx-stage4-panel";
+    panel.setAttribute("dir", "rtl");
+
+    panel.innerHTML = [
+      '<h3>Stage 4 — تحسين المشاركة والشحن بدون لمس الباكند</h3>',
+      '<p>هذه المرحلة تضيف أدوات مساعدة آمنة بعد إنشاء الصفقة: نسخ الرابط، مشاركة الصفقة، وحفظ بيانات الشحن محلياً. لا يتم تعديل تسجيل الدخول ولا Pi Allow ولا الدفع.</p>',
+
+      '<div class="ctx-stage4-grid">',
+
+        '<div class="ctx-stage4-box">',
+          '<span class="ctx-stage4-label">مشاركة الصفقة</span>',
+          '<p class="ctx-stage4-muted">يتم أخذ رابط الصفقة ونص المشاركة تلقائياً من الحقول الموجودة في Stage 3.</p>',
+          '<div class="ctx-stage4-actions">',
+            '<button type="button" class="ctx-stage4-btn" id="ctxStage4CopyDealLinkBtn">نسخ رابط الصفقة</button>',
+            '<button type="button" class="ctx-stage4-btn secondary" id="ctxStage4CopyShareTextBtn">نسخ نص المشاركة</button>',
+            '<button type="button" class="ctx-stage4-btn secondary" id="ctxStage4NativeShareBtn">مشاركة</button>',
+          '</div>',
+          '<p class="ctx-stage4-note">مهم: حقل رابط الصفقة يبقى تلقائياً وليس للكتابة اليدوية.</p>',
+        '</div>',
+
+        '<div class="ctx-stage4-box">',
+          '<span class="ctx-stage4-label">الشحن والتتبع</span>',
+          '<label class="ctx-stage4-label" for="ctxStage4Carrier">شركة الشحن</label>',
+          '<select id="ctxStage4Carrier" class="ctx-stage4-select">',
+            '<option value="custom">رابط مخصص / شركة أخرى</option>',
+            '<option value="dhl">DHL</option>',
+            '<option value="fedex">FedEx</option>',
+            '<option value="ups">UPS</option>',
+            '<option value="aramex">Aramex</option>',
+          '</select>',
+
+          '<label class="ctx-stage4-label" for="ctxStage4TrackingNumber" style="margin-top:10px;">رقم التتبع</label>',
+          '<input id="ctxStage4TrackingNumber" class="ctx-stage4-input" type="text" placeholder="أدخل رقم التتبع بعد الشحن">',
+
+          '<label class="ctx-stage4-label" for="ctxStage4TrackingUrl" style="margin-top:10px;">رابط التتبع</label>',
+          '<input id="ctxStage4TrackingUrl" class="ctx-stage4-input" type="url" placeholder="يظهر تلقائياً لبعض الشركات أو أدخل رابطاً مخصصاً">',
+
+          '<label class="ctx-stage4-label" for="ctxStage4ShipmentNote" style="margin-top:10px;">ملاحظة الشحن</label>',
+          '<textarea id="ctxStage4ShipmentNote" class="ctx-stage4-textarea" placeholder="مثال: تم تسليم الشحنة لشركة الشحن، وسيتم تحديث النزاع/الإثبات عند الحاجة."></textarea>',
+
+          '<div class="ctx-stage4-actions">',
+            '<button type="button" class="ctx-stage4-btn" id="ctxStage4SaveShippingBtn">حفظ بيانات الشحن</button>',
+            '<button type="button" class="ctx-stage4-btn secondary" id="ctxStage4CopyTrackingBtn">نسخ التتبع</button>',
+            '<button type="button" class="ctx-stage4-btn secondary" id="ctxStage4OpenTrackingBtn">فتح التتبع</button>',
+          '</div>',
+        '</div>',
+
+      '</div>',
+
+      '<div class="ctx-stage4-note">',
+        '<span class="ctx-stage4-ok">تم الحفاظ على المرحلة الخطيرة للأخير:</span> لم يتم تعديل Pi SDK، ولم يتم تعديل تسلسل Allow، ولم يتم تغيير مسارات الباكند أو منطق الدفع.',
+      '</div>'
+    ].join("");
+
+    var target = findBestInsertTarget();
+
+    if (target === document.body) {
+      document.body.appendChild(panel);
+    } else {
+      target.appendChild(panel);
+    }
+  }
+
+  function bindStage4Buttons() {
+    var copyDealLinkBtn = qs("#ctxStage4CopyDealLinkBtn");
+    var copyShareTextBtn = qs("#ctxStage4CopyShareTextBtn");
+    var nativeShareBtn = qs("#ctxStage4NativeShareBtn");
+
+    var carrier = qs("#ctxStage4Carrier");
+    var tracking = qs("#ctxStage4TrackingNumber");
+    var trackingUrl = qs("#ctxStage4TrackingUrl");
+
+    var saveShippingBtn = qs("#ctxStage4SaveShippingBtn");
+    var copyTrackingBtn = qs("#ctxStage4CopyTrackingBtn");
+    var openTrackingBtn = qs("#ctxStage4OpenTrackingBtn");
+
+    if (copyDealLinkBtn) {
+      copyDealLinkBtn.addEventListener("click", function () {
+        copyText(findPublicDealUrl(), "تم نسخ رابط الصفقة");
+      });
+    }
+
+    if (copyShareTextBtn) {
+      copyShareTextBtn.addEventListener("click", function () {
+        copyText(findShareText(), "تم نسخ نص المشاركة");
+      });
+    }
+
+    if (nativeShareBtn) {
+      nativeShareBtn.addEventListener("click", openShare);
+    }
+
+    if (carrier) {
+      carrier.addEventListener("change", refreshTrackingUrl);
+    }
+
+    if (tracking) {
+      tracking.addEventListener("input", refreshTrackingUrl);
+    }
+
+    if (saveShippingBtn) {
+      saveShippingBtn.addEventListener("click", saveStage4Data);
+    }
+
+    if (copyTrackingBtn) {
+      copyTrackingBtn.addEventListener("click", function () {
+        var value = trackingUrl && safeText(trackingUrl.value)
+          ? trackingUrl.value
+          : tracking
+            ? tracking.value
+            : "";
+
+        copyText(value, "تم نسخ بيانات التتبع");
+      });
+    }
+
+    if (openTrackingBtn) {
+      openTrackingBtn.addEventListener("click", openTrackingUrl);
+    }
+
+    if (trackingUrl) {
+      trackingUrl.addEventListener("change", saveStage4Data);
+    }
+  }
+
+  function keepReadonlyShareFields() {
+    var fields = qsa("#publicDealUrl, #dealPublicUrl, #dealLink, #shareDealUrl, #shareUrl, #shareText, #dealShareText, #publicShareText");
+
+    fields.forEach(function (field) {
+      if (!field) return;
+
+      if (field.tagName === "INPUT" || field.tagName === "TEXTAREA") {
+        field.setAttribute("readonly", "readonly");
+      }
+    });
+  }
+
+  function initStage4() {
+    updateVersionLabels();
+    keepReadonlyShareFields();
+    createStage4Panel();
+    bindStage4Buttons();
+    loadStage4Data();
+
+    console.log("[Cortex Escrow] Stage 4 Safe Polish loaded without touching Pi SDK/backend/payment logic.");
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initStage4);
+  } else {
+    initStage4();
+  }
+})();
+</script></body>
 </html>
