@@ -1,0 +1,1783 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0a0a0f" />
+  <meta name="referrer" content="no-referrer" />
+  <meta http-equiv="Content-Security-Policy" content="
+    default-src 'self';
+    script-src 'self' 'unsafe-inline' https://sdk.minepi.com https://*.minepi.com;
+    connect-src 'self' https://pi-backend-kv9g.onrender.com https://api.minepi.com https://*.minepi.com;
+    img-src 'self' data: https://*.minepi.com;
+    style-src 'self' 'unsafe-inline';
+    frame-src 'self' https://minepi.com https://*.minepi.com;
+    object-src 'none';
+    base-uri 'self';
+    form-action 'self';
+    upgrade-insecure-requests
+  " />
+  <title>Cortex Escrow V13.0 Stage 8.8 · Auto Allow Restore</title>
+  <script src="https://sdk.minepi.com/pi-sdk.js"></script>
+  <style>
+    :root {
+      --bg: #0a0a0f;
+      --bg2: #10101a;
+      --card: rgba(20, 20, 30, .94);
+      --card2: rgba(28, 28, 42, .94);
+      --accent: #7c6cff;
+      --accent2: #22d3ee;
+      --success: #00d084;
+      --error: #ff4757;
+      --warn: #ffa502;
+      --text: #f1f2f6;
+      --muted: #a4adba;
+      --border: rgba(255,255,255,.12);
+      --shadow: 0 18px 55px rgba(0,0,0,.35);
+      --radius: 18px;
+      --input-bg: rgba(255,255,255,.065);
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+    body {
+      min-height: 100vh;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Tahoma, Arial, sans-serif;
+      background:
+        radial-gradient(circle at top right, rgba(124,108,255,.22), transparent 34%),
+        radial-gradient(circle at bottom left, rgba(34,211,238,.14), transparent 31%),
+        linear-gradient(145deg, var(--bg), var(--bg2));
+      color: var(--text);
+      padding: 14px 14px calc(96px + var(--safe-bottom));
+      line-height: 1.7;
+      overflow-x: hidden;
+      touch-action: manipulation;
+    }
+
+    a { color: var(--accent2); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    button, input, textarea, select { font: inherit; }
+    button { -webkit-tap-highlight-color: transparent; }
+
+    input, textarea, select {
+      width: 100%;
+      border: 1px solid var(--border);
+      outline: none;
+      border-radius: 14px;
+      background: var(--input-bg);
+      color: var(--text);
+      padding: 12px 13px;
+      transition: .18s border-color, .18s box-shadow, .18s background;
+      -webkit-user-select: text;
+      user-select: text;
+      -webkit-touch-callout: default;
+      touch-action: auto;
+      pointer-events: auto;
+      caret-color: var(--accent2);
+      min-height: 48px;
+    }
+
+    input::placeholder, textarea::placeholder { color: rgba(241,242,246,.48); }
+    select option { background: #11111a; color: var(--text); }
+    textarea { min-height: 112px; resize: vertical; }
+    input:focus, textarea:focus, select:focus {
+      border-color: rgba(34,211,238,.58);
+      box-shadow: 0 0 0 4px rgba(34,211,238,.10);
+      background: rgba(255,255,255,.09);
+    }
+
+    .app { width: min(1080px, 100%); margin: 0 auto; display: block; }
+    .hero {
+      border: 1px solid var(--border);
+      border-radius: calc(var(--radius) + 8px);
+      background: linear-gradient(145deg, rgba(255,255,255,.08), rgba(255,255,255,.035));
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      position: relative;
+    }
+    .hero::before {
+      content: "";
+      position: absolute;
+      inset: -120px auto auto -120px;
+      width: 280px;
+      height: 280px;
+      background: radial-gradient(circle, rgba(255,255,255,.15), transparent 62%);
+      pointer-events: none;
+    }
+    .hero-inner { padding: 22px; display: grid; gap: 16px; position: relative; z-index: 1; }
+    .brand-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .logo {
+      width: 54px;
+      height: 54px;
+      border-radius: 18px;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(135deg, var(--accent), #4a3cff);
+      box-shadow: 0 12px 35px rgba(124,108,255,.28);
+      font-weight: 900;
+      color: white;
+    }
+    h1 { font-size: clamp(1.55rem, 5vw, 2.55rem); line-height: 1.25; }
+    h2 { font-size: 1.14rem; margin-bottom: 4px; }
+    .subtitle, .muted { color: var(--muted); font-size: .91rem; }
+    .badges { display: flex; flex-wrap: wrap; gap: 8px; }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 11px;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,.06);
+      border-radius: 999px;
+      color: var(--text);
+      font-size: .84rem;
+      white-space: nowrap;
+    }
+    .badge.ok { border-color: rgba(0,208,132,.35); color: #a9ffd9; }
+    .badge.warn { border-color: rgba(255,165,2,.45); color: #ffe0a6; }
+    .badge.err { border-color: rgba(255,71,87,.45); color: #ffc0c6; }
+
+    .grid { display: grid; grid-template-columns: 1.08fr .92fr; gap: 16px; margin-top: 16px; }
+    .card {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--card);
+      box-shadow: 0 10px 35px rgba(0,0,0,.20);
+      overflow: hidden;
+    }
+    .card-header {
+      padding: 16px 16px 0;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .card-body { padding: 16px; display: grid; gap: 13px; }
+    .field { display: grid; gap: 7px; }
+    .label-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+    label { color: #fff; font-weight: 750; font-size: .94rem; }
+    .hint { color: var(--muted); font-size: .81rem; }
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .amount-wrap { display: grid; grid-template-columns: 1fr 76px; gap: 8px; align-items: center; }
+    .currency-fixed {
+      height: 100%; min-height: 48px; display: grid; place-items: center;
+      border: 1px solid rgba(0,208,132,.30); border-radius: 14px;
+      background: rgba(0,208,132,.08); color: #a9ffd9; font-weight: 900; user-select: none;
+    }
+    .actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 4px; }
+    .actions.grid-actions { display: grid; grid-template-columns: 1fr 1fr; }
+    .btn {
+      border: 0; border-radius: 14px; min-height: 46px; padding: 11px 14px; cursor: pointer;
+      font-weight: 800; color: #fff; background: linear-gradient(135deg, var(--accent), #4a3cff);
+      display: inline-flex; align-items: center; justify-content: center; gap: 9px;
+      transition: .18s transform, .18s opacity, .18s filter; text-align: center;
+    }
+    .btn:hover { filter: brightness(1.08); }
+    .btn:active { transform: scale(.98); }
+    .btn:disabled { opacity: .52; cursor: not-allowed; filter: grayscale(.18); transform: none; }
+    .btn-secondary { background: linear-gradient(135deg, #0ea5e9, #06b6d4); }
+    .btn-good { background: linear-gradient(135deg, #16a34a, #00d084); }
+    .btn-warn { background: linear-gradient(135deg, #d97706, #f59e0b); }
+    .btn-bad { background: linear-gradient(135deg, #dc2626, #ef4444); }
+    .btn-ghost { min-height: 42px; background: rgba(255,255,255,.08); border: 1px solid var(--border); color: var(--text); }
+
+    .notice {
+      border: 1px solid rgba(255,255,255,.12); background: rgba(255,255,255,.055);
+      border-radius: 16px; padding: 12px 14px; color: var(--muted); font-size: .92rem;
+    }
+    .notice.ok { border-color: rgba(0,208,132,.30); color: #caffea; background: rgba(0,208,132,.07); }
+    .notice.err { border-color: rgba(255,71,87,.32); color: #ffd0d5; background: rgba(255,71,87,.07); }
+    .notice.warn { border-color: rgba(255,165,2,.33); color: #ffe5b5; background: rgba(255,165,2,.075); }
+    .section { margin-top: 12px; padding-top: 14px; border-top: 1px solid rgba(255,255,255,.10); display: grid; gap: 12px; }
+    .status-list { display: grid; gap: 9px; }
+    .status-line {
+      display: flex; align-items: center; justify-content: space-between; gap: 10px;
+      border: 1px solid rgba(255,255,255,.09); background: rgba(255,255,255,.045);
+      padding: 10px 12px; border-radius: 14px; overflow-wrap: anywhere;
+    }
+    .key { color: var(--muted); font-size: .88rem; flex: 0 0 auto; }
+    .value { color: var(--text); font-weight: 750; text-align: left; direction: ltr; overflow-wrap: anywhere; }
+    .log {
+      max-height: 255px; overflow: auto; display: grid; gap: 8px; padding-left: 4px;
+      white-space: normal;
+    }
+    .log-entry {
+      border: 1px solid rgba(255,255,255,.08); background: rgba(0,0,0,.16); border-radius: 13px;
+      padding: 9px 10px; color: var(--muted); font-size: .85rem; direction: rtl; overflow-wrap: anywhere;
+    }
+    .log-entry strong { color: var(--text); }
+    .debug-box {
+      display: none; border: 1px dashed rgba(255,255,255,.20); background: rgba(0,0,0,.20);
+      color: #e5e7eb; border-radius: 14px; padding: 10px 12px; font-size: .82rem;
+      direction: ltr; text-align: left; white-space: pre-wrap; overflow-wrap: anywhere;
+    }
+    .debug-box.show { display: block; }
+    .footer { text-align: center; color: var(--muted); margin-top: 16px; font-size: .88rem; }
+    .spinner {
+      width: 16px; height: 16px; display: none; border-radius: 50%;
+      border: 2px solid rgba(255,255,255,.40); border-top-color: #fff; animation: spin 1s linear infinite;
+    }
+    .btn.busy .spinner { display: inline-block; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+
+    .hidden { display: none !important; }
+    .full-section { margin-top: 16px; }
+    .page-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .page-summary {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+    }
+    .page-summary .status-line { min-height: 58px; }
+    .bottom-action-bar {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 80;
+      padding: 10px 12px calc(10px + var(--safe-bottom));
+      background: rgba(10,10,15,.88);
+      border-top: 1px solid var(--border);
+      backdrop-filter: blur(14px);
+      box-shadow: 0 -12px 34px rgba(0,0,0,.32);
+    }
+    .bottom-action-inner {
+      width: min(1080px, 100%);
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .bottom-action-inner .btn {
+      min-height: 52px;
+      border-radius: 16px;
+    }
+    .bottom-action-inner .btn.active {
+      outline: 2px solid rgba(34,211,238,.36);
+      outline-offset: 2px;
+    }
+    .readonly-view {
+      background: rgba(255,255,255,.045);
+      border-color: rgba(34,211,238,.18);
+    }
+
+    @media (max-width: 850px) {
+      body { padding: 10px 10px calc(104px + var(--safe-bottom)); }
+      .hero-inner { padding: 18px; }
+      .grid, .row { grid-template-columns: 1fr; }
+      .actions.grid-actions { grid-template-columns: 1fr; }
+      .page-summary { grid-template-columns: 1fr; }
+      .amount-wrap { grid-template-columns: 1fr 70px; }
+      .bottom-action-inner { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <noscript><div class="notice err">JavaScript غير مفعل. يجب تفعيل JavaScript حتى يعمل تطبيق Cortex Escrow.</div></noscript>
+
+  <main class="app" id="appRoot">
+    <section class="hero" aria-labelledby="pageTitle">
+      <div class="hero-inner">
+        <div class="brand-row">
+          <div class="brand">
+            <div class="logo" aria-hidden="true">Pi</div>
+            <div>
+              <h1 id="pageTitle">Cortex Escrow</h1>
+              <p class="subtitle">Pi Testnet Escrow · V13.0 Stage 8.8 Auto Allow Restore</p>
+            </div>
+          </div>
+          <div class="badges" aria-label="حالة التطبيق">
+            <span class="badge warn" id="networkBadge">TESTNET</span>
+            <span class="badge" id="backendBadge">فحص الباكند...</span>
+            <span class="badge ok">Currency: Pi</span>
+          </div>
+        </div>
+        <div class="notice" id="topNotice">
+          نسخة Stage 8.8 Auto Allow Restore. يتم طلب Pi Allow تلقائياً عند دخول التطبيق بصلاحية username فقط مثل التسلسل الذي نجح سابقاً. لا يوجد زر Allow يدوي، والدفع يتم من زر Pi Wallet بعد إنشاء الصفقة.
+        </div>
+        <div class="debug-box" id="debugBox"></div>
+      </div>
+    </section>
+
+    <section class="grid" id="mainGrid" aria-label="لوحة إنشاء صفقة ضمان">
+      <section class="card" aria-label="إنشاء صفقة ضمان">
+        <div class="card-header">
+          <div>
+            <h2>إنشاء صفقة ضمان</h2>
+            <p class="subtitle">الوصف + الشروط هما مرجع النزاع والتحكيم AI. لا يوجد حقل عنوان منفصل.</p>
+          </div>
+        </div>
+
+        <div class="card-body">
+          <div class="field">
+            <div class="label-row">
+              <label for="description">وصف الصفقة</label>
+              <span class="hint">مطلوب</span>
+            </div>
+            <textarea id="description" name="description" maxlength="1500" autocomplete="off" autocapitalize="sentences" spellcheck="true" placeholder="اكتب المنتج أو الخدمة، الكمية، المواصفات، طريقة التسليم، ومدة التنفيذ..."></textarea>
+          </div>
+
+          <div class="field">
+            <div class="label-row">
+              <label for="dealTerms">شروط الصفقة إن وجدت</label>
+              <span class="hint">اختياري لكنه يُعتمد مع الوصف عند النزاع</span>
+            </div>
+            <textarea id="dealTerms" name="dealTerms" maxlength="1500" autocomplete="off" autocapitalize="sentences" spellcheck="true" placeholder="مثال: مدة التسليم، شروط القبول، الضمان، سياسة الاسترداد، أو أي اتفاق خاص..."></textarea>
+          </div>
+
+          <div class="field">
+            <div class="label-row">
+              <label for="dealType">نوع الصفقة</label>
+              <span class="hint">اختر النوع الأقرب</span>
+            </div>
+            <select id="dealType" name="dealType">
+              <option value="service">خدمة</option>
+              <option value="digital">منتج رقمي</option>
+              <option value="physical">منتج مادي</option>
+              <option value="other">أخرى</option>
+            </select>
+          </div>
+
+          <div class="notice ok" id="piAccountSourceNotice">
+            هوية المستخدم داخل التطبيق تعتمد على حساب Pi المرتبط.
+          </div>
+
+          <div class="field">
+            <div class="label-row">
+              <label for="amount">السعر</label>
+              <span class="hint">حتى 7 أرقام عشرية</span>
+            </div>
+            <div class="amount-wrap">
+              <input id="amount" name="amount" inputmode="decimal" autocomplete="off" placeholder="مثال: 1 أو 0.0000001" />
+              <div class="currency-fixed" aria-label="العملة الثابتة">Pi</div>
+            </div>
+            <div class="hint">النطاق المسموح: 0.0000001 إلى 100000 Pi. العملة ثابتة وغير قابلة للتعديل.</div>
+          </div>
+
+          <div class="actions grid-actions">
+            <button type="button" class="btn" id="createBtn">
+              <span class="spinner" aria-hidden="true"></span>
+              <span class="btn-text">إنشاء العقد التجريبي</span>
+            </button>
+            <button type="button" class="btn btn-good" id="payBtn" disabled>
+              <span class="spinner" aria-hidden="true"></span>
+              <span class="btn-text">دفع Pi Testnet</span>
+            </button>
+          </div>
+
+          <div class="section" id="shareSection">
+            <h2>النشر والترويج باسم صفقة ضمان</h2>
+            <p class="muted">بعد إنشاء الصفقة يظهر رابط العرض ونص المشاركة تلقائياً من الباكند. هذه الحقول للعرض والنسخ فقط وليست للكتابة اليدوية.</p>
+            <input id="publicDealUrl" readonly data-keep-readonly="true" class="readonly-view" placeholder="سيظهر رابط العرض بعد إنشاء الصفقة" />
+            <textarea id="shareText" readonly data-keep-readonly="true" class="readonly-view" style="min-height:90px" placeholder="سيظهر نص المشاركة بعد إنشاء الصفقة"></textarea>
+            <div class="actions">
+              <button type="button" class="btn btn-ghost" id="openShareBtn" disabled>فتح العرض</button>
+              <button type="button" class="btn btn-ghost" id="copyShareBtn" disabled>نسخ نص المشاركة</button>
+              <button type="button" class="btn btn-ghost" id="nativeShareBtn" disabled>مشاركة من الجهاز</button>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <aside class="card" aria-label="حالة الربط">
+        <div class="card-header">
+          <div>
+            <h2>حالة الربط</h2>
+            <p class="subtitle">فحص الباكند ونتيجة العقد والدفع.</p>
+          </div>
+          <button type="button" class="btn btn-ghost" id="healthBtn">
+            <span class="spinner" aria-hidden="true"></span>
+            <span class="btn-text">إعادة الفحص</span>
+          </button>
+        </div>
+
+        <div class="card-body">
+          <div class="status-list">
+            <div class="status-line"><span class="key">Backend</span><span class="value" id="backendUrlView">-</span></div>
+            <div class="status-line"><span class="key">Pi SDK</span><span class="value" id="piSdkView">غير مهيأ</span></div>
+            <div class="status-line"><span class="key">Pi Account</span><span class="value" id="userView">بانتظار Pi Allow</span></div>
+            <div class="status-line"><span class="key">Pi UID</span><span class="value" id="piUidView">-</span></div>
+            <div class="status-line"><span class="key">App ID</span><span class="value" id="appIdView">-</span></div>
+            <div class="status-line"><span class="key">Deal ID</span><span class="value" id="dealView">-</span></div>
+            <div class="status-line"><span class="key">Payment ID</span><span class="value" id="paymentView">-</span></div>
+            <div class="status-line"><span class="key">TXID</span><span class="value" id="txView">-</span></div>
+            <div class="status-line"><span class="key">Status</span><span class="value" id="statusView">-</span></div>
+          </div>
+
+          <div class="notice ok" id="resultBox">تم تحميل Stage 8.8 Auto Allow Restore. اختبر ظهور Allow أولاً، ثم أنشئ الصفقة واضغط دفع Pi Testnet.</div>
+          <div class="actions">
+            <button type="button" class="btn btn-ghost" id="refreshDealBtn" disabled>قراءة الصفقة</button>
+            <button type="button" class="btn btn-ghost" id="copyLogBtn">نسخ التشخيص</button>
+          </div>
+          <div class="log" id="logBox" aria-live="polite"></div>
+        </div>
+      </aside>
+    </section>
+
+    <section class="card full-section hidden" id="shippingPage" aria-label="صفحة الشحن المستقلة">
+      <div class="card-header page-toolbar">
+        <div>
+          <h2>صفحة الشحن المستقلة</h2>
+          <p class="subtitle">بيانات الشحن والتسليم للمنتج المادي.</p>
+        </div>
+        <button type="button" class="btn btn-ghost" id="backToMainFromShippingBtn">الرجوع للصفحة الرئيسية</button>
+      </div>
+
+      <div class="card-body">
+        <div class="page-summary">
+          <div class="status-line"><span class="key">Deal ID</span><span class="value" id="shippingDealView">-</span></div>
+          <div class="status-line"><span class="key">Status</span><span class="value" id="shippingStatusView">-</span></div>
+          <div class="status-line"><span class="key">Payment</span><span class="value" id="shippingPaymentView">-</span></div>
+        </div>
+
+        <div class="row">
+          <div class="field">
+            <div class="label-row">
+              <label for="carrierName">شركة الشحن</label>
+            </div>
+            <input id="carrierName" placeholder="شركة الشحن" />
+          </div>
+          <div class="field">
+            <div class="label-row">
+              <label for="trackingNumber">رقم التتبع</label>
+            </div>
+            <input id="trackingNumber" placeholder="رقم التتبع" />
+          </div>
+        </div>
+
+        <div class="field">
+          <div class="label-row">
+            <label for="trackingUrl">رابط التتبع</label>
+          </div>
+          <input id="trackingUrl" placeholder="رابط التتبع https://" />
+        </div>
+
+        <div class="row">
+          <div class="field">
+            <div class="label-row">
+              <label for="shipmentStatus">حالة الشحنة</label>
+            </div>
+            <select id="shipmentStatus">
+              <option value="pending_shipment">لم يتم الشحن</option>
+              <option value="shipped">تم الشحن</option>
+              <option value="in_transit">في الطريق</option>
+              <option value="arrived_destination_country">وصلت بلد المشتري</option>
+              <option value="available_for_pickup">متاحة للاستلام</option>
+              <option value="delivered">تم التسليم حسب التتبع</option>
+            </select>
+          </div>
+          <div class="field">
+            <div class="label-row">
+              <label for="estimatedDeliveryDate">تاريخ التسليم المتوقع</label>
+            </div>
+            <input id="estimatedDeliveryDate" type="date" />
+          </div>
+        </div>
+
+        <div class="field">
+          <div class="label-row">
+            <label for="shippingNotes">ملاحظات الشحن</label>
+          </div>
+          <textarea id="shippingNotes" style="min-height:90px" placeholder="ملاحظات الشحن"></textarea>
+        </div>
+
+        <div class="actions">
+          <button type="button" class="btn btn-ghost" id="saveShippingBtn" disabled>حفظ الشحن</button>
+          <button type="button" class="btn btn-good" id="confirmDeliveryBtn" disabled>تأكيد الاستلام</button>
+          <button type="button" class="btn btn-warn" id="autoReleaseBtn" disabled>فحص التحرير التلقائي</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="card full-section hidden" id="disputePage" aria-label="صفحة النزاع المستقلة">
+      <div class="card-header page-toolbar">
+        <div>
+          <h2>صفحة النزاع المستقلة</h2>
+          <p class="subtitle">أدوات النزاع والتحليل والقرار النهائي.</p>
+        </div>
+        <button type="button" class="btn btn-ghost" id="backToMainBtn">الرجوع للصفحة الرئيسية</button>
+      </div>
+
+      <div class="card-body">
+        <div class="page-summary">
+          <div class="status-line"><span class="key">Deal ID</span><span class="value" id="disputeDealView">-</span></div>
+          <div class="status-line"><span class="key">Status</span><span class="value" id="disputeStatusView">-</span></div>
+          <div class="status-line"><span class="key">Payment</span><span class="value" id="disputePaymentView">-</span></div>
+        </div>
+
+        <div class="field">
+          <div class="label-row">
+            <label for="disputeReason">سبب النزاع / شكوى المشتري</label>
+            <span class="hint">مطلوب عند فتح النزاع</span>
+          </div>
+          <textarea id="disputeReason" style="min-height:95px" placeholder="اشرح سبب النزاع بوضوح: ماذا تم الاتفاق عليه؟ ما الذي لم يتم تنفيذه؟"></textarea>
+        </div>
+
+        <div class="field">
+          <div class="label-row">
+            <label for="buyerEvidence">أدلة أو شرح المشتري</label>
+            <span class="hint">اختياري لكنه مهم</span>
+          </div>
+          <textarea id="buyerEvidence" style="min-height:85px" placeholder="روابط، تفاصيل محادثة، وصف إثبات الدفع/التسليم، أو أي دليل مختصر..."></textarea>
+        </div>
+
+        <div class="field">
+          <div class="label-row">
+            <label for="sellerResponse">رد البائع</label>
+            <span class="hint">يُحفظ بعد فتح النزاع أو عند الحاجة</span>
+          </div>
+          <textarea id="sellerResponse" style="min-height:85px" placeholder="رد البائع على الشكوى..."></textarea>
+        </div>
+
+        <div class="field">
+          <div class="label-row">
+            <label for="sellerEvidence">أدلة أو شرح البائع</label>
+            <span class="hint">اختياري</span>
+          </div>
+          <textarea id="sellerEvidence" style="min-height:85px" placeholder="تفاصيل التسليم، رقم تتبع، إثبات تنفيذ الخدمة، أو روابط داعمة..."></textarea>
+        </div>
+
+        <div class="actions">
+          <button type="button" class="btn btn-bad" id="openDisputeBtn" disabled>فتح نزاع</button>
+          <button type="button" class="btn btn-ghost" id="sellerResponseBtn" disabled>حفظ رد البائع</button>
+          <button type="button" class="btn btn-warn" id="aiReviewBtn" disabled>تحليل AI</button>
+          <button type="button" class="btn btn-good" id="finalReleaseBtn" disabled>قرار: للبائع</button>
+          <button type="button" class="btn btn-bad" id="finalRefundBtn" disabled>قرار: استرداد</button>
+        </div>
+      </div>
+    </section>
+
+    <nav class="bottom-action-bar" aria-label="أزرار الشحن والنزاع">
+      <div class="bottom-action-inner">
+        <button type="button" class="btn btn-secondary" id="showShippingPageBtn" disabled>الشحن</button>
+        <button type="button" class="btn btn-warn" id="showDisputePageBtn" disabled>النزاع</button>
+      </div>
+    </nav>
+
+    <p class="footer">
+      <a href="terms.html">Terms</a> ·
+      <a href="privacy.html">Privacy</a> ·
+      Cortex Escrow V13.0 Stage 8.8 · Auto Allow Restore
+    </p>
+  </main>
+
+  <script>
+    'use strict';
+
+    const CONFIG = Object.freeze({
+      APP_NAME: 'Cortex Escrow',
+      VERSION: '13.0.8.8',
+      APP_ID: '24f0d30e-9254-4936-9425-751c825c4aea',
+      NETWORK: 'PI_TESTNET',
+      BACKEND_URL: 'https://pi-backend-kv9g.onrender.com',
+      SDK_VERSION: '2.0',
+      SANDBOX: true,
+      CURRENCY: 'Pi',
+      PI_DECIMALS: 7,
+      MIN_AMOUNT: 0.0000001,
+      MAX_AMOUNT: 100000,
+      REQUEST_TIMEOUT_MS: 22000
+    });
+
+    const PI_AUTH_SCOPES = Object.freeze(['username']);
+
+    const state = {
+      piInitialized: false,
+      auth: null,
+      accessToken: null,
+      piUser: null,
+      username: '',
+      userUid: '',
+      userLabel: '',
+      currentDeal: null,
+      dealId: null,
+      paymentId: null,
+      txid: null,
+      share: null,
+      backendOnline: false,
+      paymentBusy: false,
+      authPromise: null,
+      lastResult: null
+    };
+
+    const $ = (id) => document.getElementById(id);
+    const ui = {};
+
+    function collectUi() {
+      const ids = [
+        'mainGrid','createBtn','payBtn','healthBtn','refreshDealBtn','copyLogBtn',
+        'backendBadge','networkBadge','backendUrlView','piSdkView','userView','piUidView','appIdView','dealView','paymentView','txView','statusView',
+        'resultBox','logBox','topNotice','description','dealTerms','amount','dealType','debugBox',
+        'publicDealUrl','shareText','openShareBtn','copyShareBtn','nativeShareBtn',
+        'shippingPage','backToMainFromShippingBtn','shippingDealView','shippingStatusView','shippingPaymentView',
+        'carrierName','trackingNumber','trackingUrl','shipmentStatus','estimatedDeliveryDate','shippingNotes',
+        'saveShippingBtn','confirmDeliveryBtn','autoReleaseBtn','showShippingPageBtn',
+        'disputePage','backToMainBtn','showDisputePageBtn',
+        'disputeDealView','disputeStatusView','disputePaymentView',
+        'disputeReason','buyerEvidence','sellerResponse','sellerEvidence','openDisputeBtn','sellerResponseBtn','aiReviewBtn','finalReleaseBtn','finalRefundBtn'
+      ];
+      for (const id of ids) ui[id] = $(id);
+      return ids.every((id) => Boolean(ui[id]));
+    }
+
+    function nowTime() { return new Date().toLocaleString('ar', { hour12: false }); }
+
+    function escapeHtml(value) {
+      return String(value ?? '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
+    }
+
+    function addLog(message, data) {
+      if (!ui.logBox) return;
+      const entry = document.createElement('div');
+      entry.className = 'log-entry';
+      let extra = '';
+      if (data !== undefined && data !== null) {
+        try { extra = '<br><span dir="ltr">' + escapeHtml(JSON.stringify(data)) + '</span>'; }
+        catch (_) { extra = '<br><span dir="ltr">' + escapeHtml(String(data)) + '</span>'; }
+      }
+      entry.innerHTML = `<strong>${escapeHtml(nowTime())}</strong> — ${escapeHtml(message)}${extra}`;
+      ui.logBox.prepend(entry);
+      state.lastResult = data || message;
+    }
+
+    function serializeDebugValue(value) {
+      if (value === undefined || value === null) return '';
+      if (typeof value === 'string') return value;
+      if (value instanceof Error) {
+        const errorObject = {
+          name: value.name || 'Error',
+          message: value.message || String(value),
+          stack: value.stack || '',
+          status: value.status || '',
+          data: value.data || value.details || null
+        };
+        try { return JSON.stringify(errorObject, null, 2); }
+        catch (_) { return errorObject.message; }
+      }
+      try { return JSON.stringify(value, null, 2); }
+      catch (_) { return String(value); }
+    }
+
+    function getFrameStatus() {
+      try { return window.top === window.self ? 'top_window' : 'iframe'; }
+      catch (_) { return 'cross_origin_frame'; }
+    }
+
+    function makeDiagnosticSnapshot(phase, error) {
+      const pi = window.Pi || null;
+      const saved = loadSavedPiProfile ? loadSavedPiProfile() : null;
+      return {
+        stage: '8.8',
+        phase: String(phase || 'debug'),
+        time: new Date().toISOString(),
+        page: {
+          href: window.location.href,
+          origin: window.location.origin,
+          hostname: window.location.hostname,
+          pathname: window.location.pathname,
+          referrer: document.referrer || '',
+          frame: getFrameStatus(),
+          readyState: document.readyState
+        },
+        browser: {
+          userAgent: navigator.userAgent,
+          language: navigator.language || '',
+          online: navigator.onLine,
+          piBrowserHint: /PiBrowser|Pi Browser|PiNetwork|Pi Network/i.test(navigator.userAgent)
+        },
+        app: {
+          appName: CONFIG.APP_NAME,
+          appId: CONFIG.APP_ID,
+          version: CONFIG.VERSION,
+          network: CONFIG.NETWORK,
+          sandbox: CONFIG.SANDBOX,
+          backendUrl: CONFIG.BACKEND_URL,
+          authScopes: PI_AUTH_SCOPES
+        },
+        piSdk: {
+          present: Boolean(pi),
+          init: pi ? typeof pi.init : 'missing',
+          authenticate: pi ? typeof pi.authenticate : 'missing',
+          createPayment: pi ? typeof pi.createPayment : 'missing',
+          initializedInApp: state.piInitialized
+        },
+        session: {
+          hasAuth: Boolean(state.auth),
+          hasAccessToken: Boolean(state.accessToken),
+          username: state.username || '',
+          uid: state.userUid || '',
+          userLabel: state.userLabel || '',
+          savedProfile: Boolean(saved && saved.label),
+          backendOnline: state.backendOnline,
+          dealId: state.dealId || '',
+          paymentId: state.paymentId || '',
+          txid: state.txid || ''
+        },
+        error: error ? serializeDebugValue(error) : ''
+      };
+    }
+
+    function showDiagnostics(phase, error) {
+      const snapshot = makeDiagnosticSnapshot(phase, error);
+      state.lastResult = snapshot;
+      return snapshot;
+    }
+
+    function showDebug(message, error) {
+      if (!ui.debugBox) return;
+      const snapshot = makeDiagnosticSnapshot(message || 'debug', error);
+      ui.debugBox.textContent = String(message || 'Debug') + '\n\n' + JSON.stringify(snapshot, null, 2);
+      ui.debugBox.classList.add('show');
+      state.lastResult = snapshot;
+    }
+
+    function hideDebug() {
+      if (!ui.debugBox) return;
+      ui.debugBox.textContent = '';
+      ui.debugBox.classList.remove('show');
+    }
+
+    function setResult(message, type) {
+      ui.resultBox.className = 'notice';
+      if (type) ui.resultBox.classList.add(type);
+      ui.resultBox.textContent = message;
+    }
+
+    function setBadge(type, text) {
+      ui.backendBadge.className = 'badge';
+      if (type) ui.backendBadge.classList.add(type);
+      ui.backendBadge.textContent = text;
+    }
+
+    function setBusy(button, busy, text) {
+      if (!button) return;
+      button.disabled = Boolean(busy);
+      button.classList.toggle('busy', Boolean(busy));
+      if (text) setButtonText(button, text);
+    }
+
+    function setButtonText(button, text) {
+      const span = button ? button.querySelector('.btn-text') : null;
+      if (span) span.textContent = text;
+      else if (button) button.textContent = text;
+    }
+
+    function getNested(source, paths) {
+      if (!source || typeof source !== 'object') return null;
+      for (const path of paths) {
+        const parts = String(path).split('.');
+        let current = source;
+        let found = true;
+        for (const part of parts) {
+          if (current && Object.prototype.hasOwnProperty.call(current, part)) current = current[part];
+          else { found = false; break; }
+        }
+        if (found && current !== undefined && current !== null && current !== '') return current;
+      }
+      return null;
+    }
+
+    function extractDealId(data) {
+      return getNested(data, ['dealId','contractId','id','data.dealId','data.contractId','escrow.dealId','escrow.contractId','deal.dealId','deal.contractId']);
+    }
+
+    function extractPaymentId(payment) {
+      return getNested(payment, ['identifier','paymentId','id','data.identifier','data.paymentId']);
+    }
+
+    function extractTxid(payment) {
+      return getNested(payment, ['transaction.txid','txid','transaction.hash','data.transaction.txid','data.txid']);
+    }
+
+    function extractAccessToken(auth) {
+      return getNested(auth, ['accessToken','access_token','token','data.accessToken']);
+    }
+
+    function extractUsername(auth) {
+      return getNested(auth, ['user.username','username','data.user.username','data.username']);
+    }
+
+    function extractUserUid(auth) {
+      return getNested(auth, ['user.uid','uid','data.user.uid','data.uid','user.id','id','data.user.id']);
+    }
+
+    function extractPiUser(auth) {
+      return getNested(auth, ['user','data.user']) || null;
+    }
+
+    function makePiAccountLabel(username, uid) {
+      const name = cleanText(username || '', 80);
+      const id = cleanText(uid || '', 120);
+      if (name && id) return `${name} · ${id}`;
+      if (name) return name;
+      if (id) return id;
+      return 'Pi Account Linked';
+    }
+
+    function extractUserLabel(auth) {
+      return makePiAccountLabel(extractUsername(auth), extractUserUid(auth));
+    }
+
+    function normalizeArabicDigits(value) {
+      const arabic = '٠١٢٣٤٥٦٧٨٩';
+      const persian = '۰۱۲۳۴۵۶۷۸۹';
+      return String(value ?? '').replace(/[٠-٩]/g, d => String(arabic.indexOf(d))).replace(/[۰-۹]/g, d => String(persian.indexOf(d)));
+    }
+
+    function normalizeAmountText(value) {
+      return normalizeArabicDigits(value).trim().replace(',', '.');
+    }
+
+    function cleanText(value, maxLength) {
+      return String(value ?? '').replace(/\s+/g, ' ').trim().slice(0, maxLength);
+    }
+
+    function validateAmount() {
+      const raw = normalizeAmountText(ui.amount.value);
+      if (!raw) return { ok: false, message: 'أدخل السعر بعملة Pi.' };
+      if (!/^(?:\d+)(?:\.\d{1,7})?$/.test(raw)) {
+        return { ok: false, message: 'السعر يجب أن يكون رقماً صحيحاً أو عشرياً بحد أقصى 7 أرقام بعد الفاصلة.' };
+      }
+      const amount = Number(raw);
+      if (!Number.isFinite(amount)) return { ok: false, message: 'السعر غير صالح.' };
+      if (amount < CONFIG.MIN_AMOUNT) return { ok: false, message: 'أقل سعر مسموح هو 0.0000001 Pi.' };
+      if (amount > CONFIG.MAX_AMOUNT) return { ok: false, message: 'أعلى سعر مسموح هو 100000 Pi.' };
+      return { ok: true, amount, amountText: raw };
+    }
+
+    function buildDealTitle(description, dealType) {
+      const typeLabel = ({ service: 'خدمة', digital: 'منتج رقمي', physical: 'منتج مادي', other: 'صفقة' })[dealType] || 'صفقة';
+      const shortDescription = cleanText(description, 64);
+      return shortDescription ? `${typeLabel}: ${shortDescription}`.slice(0, 120) : 'Cortex Escrow Deal';
+    }
+
+    function getPiLinkedIdentityFallback() {
+      return state.userLabel || loadSavedPiUserLabel() || 'Pi Account Linked';
+    }
+
+    function getSavedPiIdentity() {
+      const saved = loadSavedPiProfile();
+      return {
+        label: state.userLabel || (saved ? saved.label : '') || 'Pi Account Linked',
+        username: state.username || (saved ? saved.username : '') || '',
+        uid: state.userUid || (saved ? saved.uid : '') || ''
+      };
+    }
+
+    function getPiAuthPayload() {
+      const identity = getSavedPiIdentity();
+      const accessToken = state.accessToken || '';
+      const username = state.username || identity.username || '';
+      const uid = state.userUid || identity.uid || '';
+      return {
+        accessToken,
+        piAccessToken: accessToken,
+        username,
+        uid,
+        piUsername: username,
+        piUserUid: uid,
+        userUid: uid,
+        piUser: state.piUser || null,
+        authUser: state.piUser || null
+      };
+    }
+
+    function readDealForm() {
+      const description = ui.description.value.trim();
+      const terms = ui.dealTerms.value.trim();
+      const dealType = ui.dealType.value || 'service';
+      const amount = validateAmount();
+      const piIdentity = getSavedPiIdentity();
+      const linkedIdentity = piIdentity.label;
+
+      if (!description) return { ok: false, message: 'وصف الصفقة مطلوب.' };
+      if (!amount.ok) return { ok: false, message: amount.message };
+
+      const fullDescription = terms
+        ? `وصف الصفقة:
+${description}
+
+شروط الصفقة إن وجدت:
+${terms}`
+        : description;
+
+      return {
+        ok: true,
+        payload: {
+          title: buildDealTitle(description, dealType),
+          dealType,
+          description: fullDescription,
+          dealTerms: terms,
+          terms,
+          seller: cleanText(linkedIdentity, 120),
+          sellerWallet: '',
+          buyer: linkedIdentity,
+          piUser: linkedIdentity,
+          piUsername: piIdentity.username,
+          piUserUid: piIdentity.uid,
+          userUid: piIdentity.uid,
+          creatorUsername: piIdentity.username,
+          creatorUid: piIdentity.uid,
+          buyerUsername: piIdentity.username,
+          buyerUid: piIdentity.uid,
+          amount: amount.amountText,
+          currency: CONFIG.CURRENCY,
+          network: CONFIG.NETWORK,
+          source: 'cortex_escrow_v13_stage8_8_auto_allow_restore'
+        }
+      };
+    }
+
+
+    function updateUiFromDeal(deal) {
+      if (!deal) return;
+      state.currentDeal = deal;
+      state.dealId = deal.dealId || deal.contractId || state.dealId;
+      state.paymentId = deal.paymentId || state.paymentId;
+      state.txid = deal.txid || state.txid;
+      ui.dealView.textContent = state.dealId || '-';
+      ui.paymentView.textContent = state.paymentId || '-';
+      ui.txView.textContent = state.txid || '-';
+      ui.statusView.textContent = deal.status || '-';
+      syncDisputeHeader();
+      syncShippingHeader();
+      refreshButtons();
+    }
+
+    function syncDisputeHeader() {
+      if (!ui.disputeDealView) return;
+      ui.disputeDealView.textContent = state.dealId || '-';
+      ui.disputeStatusView.textContent = ui.statusView ? (ui.statusView.textContent || '-') : '-';
+      ui.disputePaymentView.textContent = state.paymentId || '-';
+    }
+
+    function syncShippingHeader() {
+      if (!ui.shippingDealView) return;
+      ui.shippingDealView.textContent = state.dealId || '-';
+      ui.shippingStatusView.textContent = ui.statusView ? (ui.statusView.textContent || '-') : '-';
+      ui.shippingPaymentView.textContent = state.paymentId || '-';
+    }
+
+    function setActivePage(pageName) {
+      const isMain = pageName === 'main';
+      const isShipping = pageName === 'shipping';
+      const isDispute = pageName === 'dispute';
+      ui.mainGrid.classList.toggle('hidden', !isMain);
+      ui.shippingPage.classList.toggle('hidden', !isShipping);
+      ui.disputePage.classList.toggle('hidden', !isDispute);
+      ui.showShippingPageBtn.classList.toggle('active', isShipping);
+      ui.showDisputePageBtn.classList.toggle('active', isDispute);
+    }
+
+    function showShippingPage() {
+      if (!state.dealId) {
+        setResult('أنشئ الصفقة أولاً قبل فتح صفحة الشحن.', 'warn');
+        return;
+      }
+      syncShippingHeader();
+      setActivePage('shipping');
+      window.scrollTo({ top: ui.shippingPage.offsetTop - 10, behavior: 'smooth' });
+      setResult('تم فتح صفحة الشحن المستقلة.', 'ok');
+    }
+
+    function showDisputePage() {
+      if (!state.dealId) {
+        setResult('أنشئ الصفقة أولاً قبل فتح صفحة النزاع.', 'warn');
+        return;
+      }
+      syncDisputeHeader();
+      setActivePage('dispute');
+      window.scrollTo({ top: ui.disputePage.offsetTop - 10, behavior: 'smooth' });
+      setResult('تم فتح صفحة النزاع المستقلة.', 'warn');
+    }
+
+    function showMainPage() {
+      setActivePage('main');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function refreshButtons() {
+      const hasDeal = Boolean(state.dealId);
+      ui.payBtn.disabled = !hasDeal || state.paymentBusy;
+      ui.refreshDealBtn.disabled = !hasDeal;
+      ui.saveShippingBtn.disabled = !hasDeal;
+      ui.confirmDeliveryBtn.disabled = !hasDeal;
+      ui.autoReleaseBtn.disabled = !hasDeal;
+      ui.showShippingPageBtn.disabled = !hasDeal;
+      ui.showDisputePageBtn.disabled = !hasDeal;
+      ui.openDisputeBtn.disabled = !hasDeal;
+      ui.sellerResponseBtn.disabled = !hasDeal;
+      ui.aiReviewBtn.disabled = !hasDeal;
+      ui.finalReleaseBtn.disabled = !hasDeal;
+      ui.finalRefundBtn.disabled = !hasDeal;
+      syncDisputeHeader();
+      syncShippingHeader();
+      const hasShare = Boolean(state.share && (state.share.publicUrl || state.share.url));
+      ui.openShareBtn.disabled = !hasShare;
+      ui.copyShareBtn.disabled = !hasShare;
+      ui.nativeShareBtn.disabled = !hasShare;
+    }
+
+    async function waitForPiSdk(timeoutMs = 7000) {
+      const started = Date.now();
+      while (Date.now() - started < timeoutMs) {
+        if (window.Pi && typeof window.Pi.init === 'function') return true;
+        await new Promise(resolve => setTimeout(resolve, 150));
+      }
+      return false;
+    }
+
+    async function ensurePiSdk(showMessage = true) {
+      if (state.piInitialized) return true;
+      const available = await waitForPiSdk();
+      if (!available) {
+        ui.piSdkView.textContent = 'غير متوفر';
+        if (showMessage) setResult('لم يتم العثور على Pi SDK. افتح الرابط من Pi Browser وتأكد أن sdk.minepi.com يعمل.', 'err');
+        return false;
+      }
+      try {
+        await Promise.resolve(window.Pi.init({ version: CONFIG.SDK_VERSION, sandbox: CONFIG.SANDBOX }));
+        state.piInitialized = true;
+        ui.piSdkView.textContent = 'مهيأ';
+        showDiagnostics('pi_init_success');
+        addLog('تمت تهيئة Pi SDK.', { version: CONFIG.SDK_VERSION, sandbox: CONFIG.SANDBOX });
+        return true;
+      } catch (error) {
+        const message = error && error.message ? error.message : String(error);
+        if (/already|init/i.test(message)) {
+          state.piInitialized = true;
+          ui.piSdkView.textContent = 'مهيأ';
+          showDiagnostics('pi_init_already_ready');
+          addLog('Pi SDK كان مهيأ مسبقاً وتم اعتماد الجلسة الحالية.', { version: CONFIG.SDK_VERSION, sandbox: CONFIG.SANDBOX });
+          return true;
+        }
+        ui.piSdkView.textContent = 'خطأ';
+        setResult('فشل تهيئة Pi SDK: ' + message, 'err');
+        showDebug('Pi init error', error);
+        return false;
+      }
+    }
+
+    function savePiUserLabel(label) {
+      try {
+        if (label) localStorage.setItem('cortex_escrow_pi_user_label', String(label));
+      } catch (_) {}
+    }
+
+    function savePiProfile() {
+      try {
+        const profile = {
+          label: state.userLabel || '',
+          username: state.username || '',
+          uid: state.userUid || '',
+          savedAt: new Date().toISOString()
+        };
+        localStorage.setItem('cortex_escrow_pi_profile', JSON.stringify(profile));
+        if (profile.label) localStorage.setItem('cortex_escrow_pi_user_label', profile.label);
+      } catch (_) {}
+    }
+
+    function loadSavedPiProfile() {
+      try {
+        const raw = localStorage.getItem('cortex_escrow_pi_profile');
+        if (!raw) {
+          const oldLabel = localStorage.getItem('cortex_escrow_pi_user_label') || '';
+          return oldLabel ? { label: oldLabel, username: '', uid: '' } : null;
+        }
+        const profile = JSON.parse(raw);
+        if (!profile || typeof profile !== 'object') return null;
+        return {
+          label: profile.label || '',
+          username: profile.username || '',
+          uid: profile.uid || ''
+        };
+      } catch (_) {
+        return null;
+      }
+    }
+
+    function loadSavedPiUserLabel() {
+      const profile = loadSavedPiProfile();
+      return profile ? (profile.label || '') : '';
+    }
+
+    async function ensurePiAuth() {
+      if (state.auth) return state.auth;
+      if (state.authPromise) return state.authPromise;
+
+      state.authPromise = (async () => {
+        const ready = await ensurePiSdk(true);
+        if (!ready) throw new Error('Pi SDK غير جاهز.');
+        if (!window.Pi || typeof window.Pi.authenticate !== 'function') {
+          throw new Error('Pi.authenticate غير متوفر. افتح التطبيق من Pi Browser.');
+        }
+
+        setResult('سيظهر Pi Allow الرسمي الآن لمرة واحدة بصلاحية username فقط. الدفع سيتم لاحقاً من زر Pi Wallet بعد إنشاء الصفقة.', 'warn');
+        showDiagnostics('before_pi_authenticate');
+        const auth = await window.Pi.authenticate(PI_AUTH_SCOPES, onIncompletePaymentFound);
+
+        state.auth = auth;
+        state.accessToken = extractAccessToken(auth);
+        state.piUser = extractPiUser(auth);
+        state.username = extractUsername(auth) || '';
+        state.userUid = extractUserUid(auth) || '';
+        state.userLabel = extractUserLabel(auth);
+        ui.userView.textContent = state.userLabel;
+        ui.piUidView.textContent = state.userUid || '-';
+        savePiProfile();
+        hideDebug();
+        showDiagnostics('pi_auth_success');
+
+        addLog('تم ربط حساب Pi بنجاح عند الدخول.', {
+          user: state.userLabel,
+          username: state.username || '-',
+          uid: state.userUid || '-',
+          scopes: PI_AUTH_SCOPES
+        });
+
+        return auth;
+      })();
+
+      try {
+        return await state.authPromise;
+      } finally {
+        state.authPromise = null;
+      }
+    }
+
+    async function autoConnectPiAllowOnEntry() {
+      if (state.auth) return;
+      try {
+        setResult('يتم الآن فتح لوحة Pi Allow الرسمية تلقائياً. لا يوجد زر Allow يدوي، وزر الدفع لن يستدعي تسجيل دخول جديد.', 'warn');
+        await ensurePiAuth();
+        setResult('تم ربط Pi Allow تلقائياً. يمكنك إنشاء الصفقة ثم الضغط على دفع Pi Testnet.', 'ok');
+      } catch (error) {
+        const saved = loadSavedPiProfile();
+        if (saved && saved.label) {
+          state.username = saved.username || state.username || '';
+          state.userUid = saved.uid || state.userUid || '';
+          state.userLabel = saved.label || state.userLabel || '';
+          ui.userView.textContent = saved.label + ' · جلسة محفوظة';
+          ui.piUidView.textContent = state.userUid || '-';
+        }
+        setResult('لم تكتمل موافقة Pi Allow تلقائياً. افتح التطبيق من Pi Browser، وتأكد أن App ID هو نفس التطبيق داخل Pi Developer Portal.', 'warn');
+        addLog('Pi Allow التلقائي لم يكتمل.', { message: error.message || String(error) });
+        showDiagnostics('auto_pi_allow_not_completed', error);
+      }
+    }
+
+
+    async function onIncompletePaymentFound(payment) {
+      const paymentId = extractPaymentId(payment);
+      const txid = extractTxid(payment);
+      const dealId = getNested(payment, ['metadata.dealId','metadata.contractId','data.metadata.dealId']) || state.dealId;
+
+      if (paymentId) { state.paymentId = paymentId; ui.paymentView.textContent = paymentId; }
+      if (txid) { state.txid = txid; ui.txView.textContent = txid; }
+
+      addLog('تم العثور على دفعة Pi غير مكتملة.', { paymentId: paymentId || '-', txid: txid || '-', dealId: dealId || '-' });
+
+      if (paymentId && txid) {
+        try {
+          const completed = await apiFetch('/api/pi/complete', {
+            method: 'POST',
+            body: { paymentId, txid, dealId, contractId: dealId, network: CONFIG.NETWORK, appId: CONFIG.APP_ID, source: 'incomplete_payment', ...getPiAuthPayload() }
+          });
+          setResult('تم إرسال الدفعة غير المكتملة للباكند لإكمالها.', 'ok');
+          addLog('اكتملت معالجة الدفعة غير المكتملة.', completed);
+          if (dealId) await readDeal(dealId, false);
+        } catch (error) {
+          setResult('توجد دفعة غير مكتملة ولم ينجح إكمالها تلقائياً: ' + (error.message || error), 'warn');
+          addLog('فشل إكمال الدفعة غير المكتملة.', error.data || { message: error.message || String(error) });
+        }
+      }
+    }
+
+    async function apiFetch(path, options = {}) {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), CONFIG.REQUEST_TIMEOUT_MS);
+      const headers = Object.assign({ 'Content-Type': 'application/json', Accept: 'application/json' }, options.headers || {});
+      let body = options.body;
+
+      if (body !== undefined && body !== null && typeof body !== 'string') {
+        body = JSON.stringify(body);
+      }
+
+      try {
+        const response = await fetch(CONFIG.BACKEND_URL.replace(/\/+$/, '') + path, {
+          method: options.method || 'GET',
+          headers,
+          body,
+          signal: controller.signal,
+          cache: 'no-store'
+        });
+
+        const contentType = response.headers.get('content-type') || '';
+        const data = contentType.includes('application/json')
+          ? await response.json()
+          : { raw: await response.text() };
+
+        if (!response.ok || data.success === false || data.ok === false) {
+          const error = new Error(data.message || data.error || data.raw || response.statusText || `HTTP ${response.status}`);
+          error.status = response.status;
+          error.data = data;
+          error.details = data;
+          throw error;
+        }
+
+        return data || { success: true };
+      } catch (error) {
+        if (error && error.name === 'AbortError') {
+          const timeoutError = new Error('انتهت مهلة الاتصال بالباكند.');
+          timeoutError.details = { path };
+          throw timeoutError;
+        }
+        throw error;
+      } finally {
+        clearTimeout(timer);
+      }
+    }
+
+
+    async function checkBackend() {
+      hideDebug();
+      setBadge('', 'فحص الباكند...');
+      setBusy(ui.healthBtn, true);
+      try {
+        const data = await apiFetch('/api/health');
+        state.backendOnline = true;
+        setBadge('ok', 'Backend OK');
+        setResult('الباكند متصل وجاهز.', 'ok');
+        addLog('فحص الباكند ناجح.', data);
+      } catch (error) {
+        state.backendOnline = false;
+        setBadge('err', 'Backend Error');
+        setResult('فشل فحص الباكند: ' + (error.message || error), 'err');
+        addLog('فشل فحص الباكند.', error.data || { message: error.message || String(error) });
+        showDebug('Backend health error', error);
+      } finally {
+        setBusy(ui.healthBtn, false);
+      }
+    }
+
+    async function createDeal() {
+      hideDebug();
+      setBusy(ui.createBtn, true, 'جاري إنشاء العقد...');
+
+      try {
+        const form = readDealForm();
+        if (!form.ok) throw new Error(form.message);
+
+        if (!state.backendOnline) {
+          await checkBackend().catch(() => null);
+        }
+
+        const created = await apiFetch('/api/escrow/create', { method: 'POST', body: form.payload });
+        const dealId = extractDealId(created);
+        if (!dealId) throw new Error('تم إنشاء الطلب لكن لم يرجع الباكند Deal ID واضح.');
+
+        const createdDeal = created.deal || created.escrow || created.data || created;
+        state.currentDeal = {
+          ...createdDeal,
+          dealId,
+          contractId: createdDeal.contractId || dealId,
+          title: createdDeal.title || form.payload.title,
+          description: createdDeal.description || form.payload.description,
+          dealTerms: createdDeal.dealTerms || form.payload.dealTerms,
+          amount: createdDeal.amount || form.payload.amount,
+          currency: CONFIG.CURRENCY,
+          seller: createdDeal.seller || form.payload.seller,
+          sellerWallet: createdDeal.sellerWallet || '',
+          piUsername: createdDeal.piUsername || form.payload.piUsername,
+          piUserUid: createdDeal.piUserUid || form.payload.piUserUid,
+          userUid: createdDeal.userUid || form.payload.userUid,
+          buyerUsername: createdDeal.buyerUsername || form.payload.buyerUsername,
+          buyerUid: createdDeal.buyerUid || form.payload.buyerUid,
+          creatorUsername: createdDeal.creatorUsername || form.payload.creatorUsername,
+          creatorUid: createdDeal.creatorUid || form.payload.creatorUid,
+          dealType: createdDeal.dealType || form.payload.dealType
+        };
+
+        state.dealId = dealId;
+        ui.dealView.textContent = dealId;
+        ui.statusView.textContent = getNested(created, ['status','deal.status','data.status']) || 'CREATED';
+
+        setResult('تم إنشاء صفقة الضمان. يمكنك الآن الضغط على دفع Pi Testnet.', 'ok');
+        addLog('تم إنشاء الصفقة.', created);
+
+        await readDeal(dealId, true).catch(() => null);
+        await loadShareKit().catch(() => null);
+        refreshButtons();
+
+        return state.currentDeal;
+      } catch (error) {
+        setResult('فشل إنشاء الصفقة: ' + (error.message || error), 'err');
+        addLog('فشل إنشاء الصفقة.', error.data || { message: error.message || String(error) });
+        showDebug('Create deal error', error);
+        return null;
+      } finally {
+        setBusy(ui.createBtn, false, 'إنشاء العقد التجريبي');
+        refreshButtons();
+      }
+    }
+
+
+    async function readDeal(id = state.dealId, showOk = true) {
+      if (!id) throw new Error('لا يوجد Deal ID.');
+      const data = await apiFetch('/api/escrow/' + encodeURIComponent(id));
+      const deal = data.deal || data.escrow || data.data || data;
+      updateUiFromDeal(deal);
+      if (showOk) setResult('تم تحديث بيانات الصفقة.', 'ok');
+      addLog('بيانات الصفقة الحالية.', data);
+      return deal;
+    }
+
+    function makePaymentData() {
+      const deal = state.currentDeal || {};
+      const amount = Number(deal.amount || normalizeAmountText(ui.amount.value));
+      if (!Number.isFinite(amount) || amount <= 0) throw new Error('مبلغ الصفقة غير صحيح.');
+      const dealId = deal.dealId || deal.contractId || state.dealId;
+      if (!dealId) throw new Error('أنشئ الصفقة أولاً.');
+      const dealType = deal.dealType || ui.dealType.value || 'service';
+      const memoType = ({ service: 'Service', digital: 'Digital', physical: 'Physical', other: 'Deal' })[dealType] || 'Deal';
+      const description = deal.description || readDealForm().payload.description;
+      const piIdentity = getSavedPiIdentity();
+      return {
+        amount,
+        memo: `Cortex Escrow Deal - ${memoType}`,
+        metadata: {
+          type: 'escrow_deal_payment',
+          app: CONFIG.APP_NAME,
+          version: CONFIG.VERSION,
+          dealId,
+          contractId: deal.contractId || dealId,
+          title: deal.title || buildDealTitle(description, dealType),
+          dealType,
+          description,
+          dealTerms: deal.dealTerms || ui.dealTerms.value.trim() || '',
+          amount: deal.amount || normalizeAmountText(ui.amount.value),
+          currency: CONFIG.CURRENCY,
+          seller: deal.seller || piIdentity.label,
+          buyer: state.userLabel || deal.buyer || piIdentity.label,
+          piUser: piIdentity.label,
+          piUsername: piIdentity.username,
+          piUserUid: piIdentity.uid,
+          userUid: piIdentity.uid,
+          creatorUsername: piIdentity.username,
+          creatorUid: piIdentity.uid,
+          buyerUsername: deal.buyerUsername || piIdentity.username,
+          buyerUid: deal.buyerUid || piIdentity.uid,
+          sellerWallet: deal.sellerWallet || '',
+          createdAt: deal.createdAt || new Date().toISOString()
+        }
+      };
+    }
+
+    async function startPiPayment() {
+      if (state.paymentBusy) return;
+      hideDebug();
+      state.paymentBusy = true;
+      setBusy(ui.payBtn, true, 'جاري فتح Pi Wallet...');
+
+      try {
+        if (!state.dealId) throw new Error('أنشئ الصفقة أولاً ثم ادفع.');
+
+        const sdkReady = await ensurePiSdk(true);
+        if (!sdkReady) throw new Error('Pi SDK غير جاهز. افتح التطبيق من Pi Browser.');
+
+        if (state.authPromise) {
+          addLog('يوجد Pi Allow قيد المعالجة؛ سيتم انتظار انتهائه قبل فتح Pi Wallet.');
+          await state.authPromise.catch(() => null);
+        }
+
+        if (!state.auth) {
+          setResult('لا يمكن فتح Pi Wallet قبل اكتمال Pi Allow في نفس الجلسة. أغلق التطبيق وافتحه من Pi Browser ثم اضغط Allow عند ظهور اللوحة الرسمية.', 'warn');
+          addLog('تم إيقاف الدفع لأن جلسة Pi Allow غير مكتملة في هذه الجلسة.', {
+            dealId: state.dealId,
+            paymentFlow: 'blocked_before_createPayment'
+          });
+          showDiagnostics('payment_blocked_without_current_auth');
+          return;
+        }
+
+        if (!state.currentDeal) await readDeal(state.dealId, false).catch(() => null);
+
+        if (!window.Pi || typeof window.Pi.createPayment !== 'function') {
+          throw new Error('Pi.createPayment غير متوفر. افتح التطبيق من Pi Browser.');
+        }
+
+        const paymentData = makePaymentData();
+        const dealId = paymentData.metadata.dealId;
+        addLog('بدء فتح Pi Wallet للصفقة عبر زر الدفع.', paymentData);
+        setResult('يتم فتح واجهة Pi Wallet الآن. أكمل الدفع من داخل محفظة Pi.', 'warn');
+
+        const result = window.Pi.createPayment(paymentData, {
+          onReadyForServerApproval: async function(paymentId) {
+            try {
+              state.paymentId = paymentId;
+              ui.paymentView.textContent = paymentId;
+
+              const approved = await apiFetch('/api/pi/approve', {
+                method: 'POST',
+                body: {
+                  paymentId,
+                  dealId,
+                  contractId: dealId,
+                  network: CONFIG.NETWORK,
+                  appId: CONFIG.APP_ID,
+                  ...getPiAuthPayload()
+                }
+              });
+
+              setResult('وافق الباكند على الدفع. أكمل العملية داخل Pi Wallet.', 'ok');
+              addLog('تمت موافقة الباكند على الدفع.', approved);
+              await readDeal(state.dealId, false).catch(() => null);
+            } catch (error) {
+              setResult('فشل اعتماد الدفع في الباكند: ' + (error.message || error), 'err');
+              addLog('فشل اعتماد الدفع في الباكند.', error.data || { message: error.message || String(error) });
+              showDebug('Pi approval callback error', error);
+            }
+          },
+
+          onReadyForServerCompletion: async function(paymentId, txid) {
+            try {
+              state.paymentId = paymentId;
+              state.txid = txid;
+              ui.paymentView.textContent = paymentId;
+              ui.txView.textContent = txid;
+
+              const completed = await apiFetch('/api/pi/complete', {
+                method: 'POST',
+                body: {
+                  paymentId,
+                  txid,
+                  dealId,
+                  contractId: dealId,
+                  network: CONFIG.NETWORK,
+                  appId: CONFIG.APP_ID,
+                  ...getPiAuthPayload()
+                }
+              });
+
+              setResult('اكتمل دفع Pi Testnet وتم تسجيله في الباكند.', 'ok');
+              addLog('اكتمل الدفع عبر الباكند.', completed);
+              await readDeal(state.dealId, false).catch(() => null);
+            } catch (error) {
+              setResult('فشل إكمال الدفع في الباكند: ' + (error.message || error), 'err');
+              addLog('فشل إكمال الدفع في الباكند.', error.data || { message: error.message || String(error) });
+              showDebug('Pi completion callback error', error);
+            }
+          },
+
+          onCancel: async function(paymentId) {
+            state.paymentId = paymentId || state.paymentId;
+            if (state.paymentId) ui.paymentView.textContent = state.paymentId;
+
+            try {
+              const cancelled = await apiFetch('/api/pi/cancel', {
+                method: 'POST',
+                body: {
+                  paymentId: state.paymentId,
+                  dealId,
+                  contractId: dealId,
+                  network: CONFIG.NETWORK,
+                  appId: CONFIG.APP_ID,
+                  ...getPiAuthPayload()
+                }
+              });
+              setResult('تم إلغاء الدفع من المستخدم وتم إبلاغ الباكند.', 'warn');
+              addLog('تم إلغاء الدفع.', cancelled);
+            } catch (error) {
+              setResult('تم إلغاء الدفع من المستخدم، لكن تعذر تسجيل الإلغاء في الباكند.', 'warn');
+              addLog('تعذر تسجيل إلغاء الدفع.', error.data || { message: error.message || String(error) });
+            }
+          },
+
+          onError: function(error, payment) {
+            const message = error && error.message ? error.message : String(error);
+            const friendly = /authentication/i.test(message)
+              ? 'فشل مصادقة Pi Wallet. تأكد أن التطبيق مفتوح من Pi Browser وأن App ID والباكند مربوطان بنفس تطبيق Pi.'
+              : 'حدث خطأ في Pi Wallet: ' + message;
+            setResult(friendly, 'err');
+            addLog('خطأ في Pi Wallet.', { message, payment });
+            showDebug('Pi payment error', error);
+          }
+        });
+
+        if (result && typeof result.then === 'function') await result;
+      } catch (error) {
+        setResult('فشل بدء دفع Pi: ' + (error.message || error), 'err');
+        addLog('فشل بدء الدفع.', error.data || { message: error.message || String(error) });
+        showDebug('Start payment error', error);
+      } finally {
+        state.paymentBusy = false;
+        setBusy(ui.payBtn, false, 'دفع Pi Testnet');
+        refreshButtons();
+      }
+    }
+
+
+    async function loadShareKit() {
+      if (!state.dealId) return null;
+      const data = await apiFetch('/api/social/share/' + encodeURIComponent(state.dealId));
+      const share = data.share || data.data || data;
+      state.share = share;
+      ui.publicDealUrl.value = share.publicUrl || share.url || '';
+      ui.shareText.value = share.text || share.message || '';
+      refreshButtons();
+      addLog('تم تحميل بيانات المشاركة.', share);
+      return share;
+    }
+
+    async function ensureShareKit() {
+      if (!state.share && state.dealId) await loadShareKit();
+      if (!state.share) throw new Error('لا توجد بيانات مشاركة متاحة.');
+      return state.share;
+    }
+
+    async function openSharePage() {
+      const share = await ensureShareKit();
+      const url = share.publicUrl || share.url;
+      if (!url) throw new Error('رابط العرض غير موجود.');
+      window.open(url, '_blank', 'noopener,noreferrer');
+    }
+
+    async function copyShareText() {
+      const share = await ensureShareKit();
+      const text = `${share.text || ''}\n${share.publicUrl || share.url || ''}`.trim();
+      await navigator.clipboard.writeText(text);
+      setResult('تم نسخ نص المشاركة.', 'ok');
+      addLog('تم نسخ نص المشاركة.');
+    }
+
+    async function nativeShare() {
+      const share = await ensureShareKit();
+      const url = share.publicUrl || share.url || '';
+      const text = share.text || '';
+      if (navigator.share) {
+        await navigator.share({ title: share.title || 'Cortex Escrow Deal', text, url });
+        addLog('تم فتح مشاركة الجهاز.');
+      } else {
+        await navigator.clipboard.writeText(`${text}\n${url}`.trim());
+        addLog('الجهاز لا يدعم المشاركة المباشرة، تم النسخ بدلاً من ذلك.');
+      }
+    }
+
+    async function saveShipping() {
+      if (!state.dealId) throw new Error('لا توجد صفقة.');
+      const body = {
+        carrierName: ui.carrierName.value.trim(),
+        trackingNumber: ui.trackingNumber.value.trim(),
+        trackingUrl: ui.trackingUrl.value.trim(),
+        shipmentStatus: ui.shipmentStatus.value,
+        estimatedDeliveryDate: ui.estimatedDeliveryDate.value,
+        shippingNotes: ui.shippingNotes.value.trim()
+      };
+      const data = await apiFetch('/api/shipping/' + encodeURIComponent(state.dealId), { method: 'POST', body });
+      updateUiFromDeal(data.deal || data.data || data);
+      setResult('تم حفظ بيانات الشحن.', 'ok');
+      addLog('تم حفظ بيانات الشحن.', data);
+    }
+
+    async function confirmDelivery() {
+      const data = await apiFetch('/api/shipping/' + encodeURIComponent(state.dealId) + '/confirm-delivery', { method: 'POST', body: {} });
+      updateUiFromDeal(data.deal || data.data || data);
+      setResult('تم تأكيد الاستلام.', 'ok');
+      addLog('تم تأكيد الاستلام.', data);
+    }
+
+    async function autoReleaseCheck() {
+      const data = await apiFetch('/api/escrow/' + encodeURIComponent(state.dealId) + '/auto-release-check', { method: 'POST', body: {} });
+      updateUiFromDeal(data.deal || data.data || data);
+      setResult('تم فحص التحرير التلقائي.', 'ok');
+      addLog('نتيجة فحص التحرير التلقائي.', data);
+    }
+
+    async function openDispute() {
+      const body = {
+        dealId: state.dealId,
+        disputeReason: ui.disputeReason.value.trim(),
+        buyerEvidence: ui.buyerEvidence.value.trim()
+      };
+      if (!body.disputeReason) throw new Error('اكتب سبب النزاع أولاً.');
+      const data = await apiFetch('/api/disputes/open', { method: 'POST', body });
+      updateUiFromDeal(data.deal || data.data || data);
+      setResult('تم فتح النزاع.', 'warn');
+      addLog('تم فتح النزاع.', data);
+    }
+
+    async function saveSellerResponse() {
+      const body = {
+        sellerResponse: ui.sellerResponse.value.trim(),
+        sellerEvidence: ui.sellerEvidence.value.trim()
+      };
+      const data = await apiFetch('/api/disputes/' + encodeURIComponent(state.dealId) + '/seller-response', { method: 'POST', body });
+      updateUiFromDeal(data.deal || data.data || data);
+      setResult('تم حفظ رد البائع.', 'ok');
+      addLog('تم حفظ رد البائع.', data);
+    }
+
+    async function runAiReview() {
+      const data = await apiFetch('/api/disputes/' + encodeURIComponent(state.dealId) + '/ai-review', { method: 'POST', body: {} });
+      updateUiFromDeal(data.deal || data.data || data);
+      setResult('تم إنشاء توصية AI للنزاع.', 'warn');
+      addLog('توصية فض النزاع.', data);
+    }
+
+    async function finalDecision(decision) {
+      const data = await apiFetch('/api/disputes/' + encodeURIComponent(state.dealId) + '/final-decision', {
+        method: 'POST',
+        body: { finalDecision: decision }
+      });
+      updateUiFromDeal(data.deal || data.data || data);
+      setResult('تم حفظ القرار النهائي.', 'ok');
+      addLog('تم حفظ القرار النهائي.', data);
+    }
+
+    function installAmountGuard() {
+      ui.amount.addEventListener('input', function() {
+        const original = ui.amount.value;
+        const normalized = normalizeAmountText(original);
+        let cleaned = normalized.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1');
+        const parts = cleaned.split('.');
+        if (parts.length > 1) cleaned = (parts[0] || '0') + '.' + parts[1].slice(0, CONFIG.PI_DECIMALS);
+        if (cleaned !== original) ui.amount.value = cleaned;
+      });
+    }
+
+    function installInputFocusFixes() {
+      const controls = document.querySelectorAll('input, textarea, select');
+      controls.forEach((el) => {
+        const keepReadonly = el.dataset.keepReadonly === 'true' || el.hasAttribute('readonly');
+        if (!keepReadonly) el.removeAttribute('readonly');
+        el.tabIndex = el.tabIndex < 0 ? 0 : el.tabIndex;
+        el.addEventListener('touchend', () => {
+          if (document.activeElement !== el && typeof el.focus === 'function') {
+            setTimeout(() => el.focus({ preventScroll: true }), 0);
+          }
+        }, { passive: true });
+        el.addEventListener('click', () => {
+          if (document.activeElement !== el && typeof el.focus === 'function') el.focus();
+        });
+      });
+    }
+
+    function bindButton(button, handler) {
+      button.addEventListener('click', async () => {
+        try { await handler(); }
+        catch (error) {
+          setResult('خطأ: ' + (error.message || error), 'err');
+          addLog('خطأ.', error.data || { message: error.message || String(error) });
+          showDebug('Button handler error', error);
+        } finally { refreshButtons(); }
+      });
+    }
+
+    function installGlobalErrorHandlers() {
+      window.addEventListener('error', function(event) {
+        const message = event.message || 'JavaScript error';
+        if (ui.resultBox) setResult('خطأ في الواجهة: ' + message, 'err');
+        if (ui.logBox) addLog('Global error', message);
+        if (ui.debugBox) showDebug(message, event.error);
+      });
+
+      window.addEventListener('unhandledrejection', function(event) {
+        const reason = event.reason || 'Unhandled promise rejection';
+        const message = reason.message || String(reason);
+        if (ui.resultBox) setResult('خطأ غير متوقع: ' + message, 'err');
+        if (ui.logBox) addLog('Unhandled rejection', message);
+        if (ui.debugBox) showDebug(message, reason);
+      });
+    }
+
+    async function boot() {
+      installGlobalErrorHandlers();
+
+      if (!collectUi()) {
+        console.error('Missing UI elements');
+        return;
+      }
+
+      const savedProfile = loadSavedPiProfile();
+      const savedUser = savedProfile ? (savedProfile.label || '') : '';
+
+      ui.backendUrlView.textContent = CONFIG.BACKEND_URL;
+      ui.appIdView.textContent = CONFIG.APP_ID;
+      ui.networkBadge.textContent = CONFIG.NETWORK === 'PI_TESTNET' ? 'TESTNET' : CONFIG.NETWORK;
+      showDiagnostics('boot_after_ui_ready');
+      if (savedProfile) {
+        state.username = savedProfile.username || '';
+        state.userUid = savedProfile.uid || '';
+        state.userLabel = savedProfile.label || savedUser || '';
+        if (state.userLabel) ui.userView.textContent = state.userLabel + ' · محفوظ';
+        ui.piUidView.textContent = state.userUid || '-';
+      }
+
+      installAmountGuard();
+      installInputFocusFixes();
+
+      bindButton(ui.createBtn, createDeal);
+      bindButton(ui.payBtn, startPiPayment);
+      bindButton(ui.healthBtn, checkBackend);
+      bindButton(ui.refreshDealBtn, () => readDeal());
+      bindButton(ui.openShareBtn, openSharePage);
+      bindButton(ui.copyShareBtn, copyShareText);
+      bindButton(ui.nativeShareBtn, nativeShare);
+      bindButton(ui.saveShippingBtn, saveShipping);
+      bindButton(ui.confirmDeliveryBtn, confirmDelivery);
+      bindButton(ui.autoReleaseBtn, autoReleaseCheck);
+      bindButton(ui.showShippingPageBtn, showShippingPage);
+      bindButton(ui.backToMainFromShippingBtn, showMainPage);
+      bindButton(ui.showDisputePageBtn, showDisputePage);
+      bindButton(ui.backToMainBtn, showMainPage);
+      bindButton(ui.openDisputeBtn, openDispute);
+      bindButton(ui.sellerResponseBtn, saveSellerResponse);
+      bindButton(ui.aiReviewBtn, runAiReview);
+      bindButton(ui.finalReleaseBtn, () => finalDecision('release_to_seller'));
+      bindButton(ui.finalRefundBtn, () => finalDecision('refund_to_buyer'));
+      bindButton(ui.copyLogBtn, async () => {
+        const text = typeof state.lastResult === 'string' ? state.lastResult : JSON.stringify(state.lastResult || ui.resultBox.textContent, null, 2);
+        await navigator.clipboard.writeText(text || '');
+        setResult('تم نسخ التشخيص/آخر نتيجة.', 'ok');
+      });
+
+      addLog('تم تحميل Cortex Escrow V13.0 Stage 8.8 Auto Allow Restore.');
+      setActivePage('main');
+      refreshButtons();
+      syncDisputeHeader();
+      syncShippingHeader();
+
+      const sdkReady = await ensurePiSdk(false).catch((error) => { showDebug('Pi SDK boot error', error); return false; });
+      showDiagnostics(sdkReady ? 'sdk_ready_before_auto_allow' : 'sdk_not_ready_before_auto_allow');
+      checkBackend().catch(() => null);
+
+      if (sdkReady) {
+        setTimeout(() => {
+          autoConnectPiAllowOnEntry().catch(() => null);
+        }, 450);
+      } else {
+        setResult('افتح التطبيق من Pi Browser حتى يتم تحميل Pi SDK وظهور لوحة Allow.', 'warn');
+      }
+    }
+
+
+    document.addEventListener('DOMContentLoaded', boot);
+  </script>
+</body>
+</html>
